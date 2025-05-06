@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
+      - '.idea/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  staking-contracts-validate:
+    name: Run staking-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/staking-contracts-ci.yaml
+
+  staking-contracts-release:
+    name: Run staking-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/staking-contracts-cd.yaml
+    needs: staking-contracts-validate
+
+  staking-frontend-validate:
+    name: Run staking-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/staking-frontend-ci.yaml
+
+  staking-frontend-release:
+    name: Run staking-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/staking-frontend-cd.yaml
+    needs: staking-frontend-validate

@@ -1,0 +1,14 @@
+name: Pull Request validation
+
+on: [pull_request]
+
+
+jobs:
+  staking-contracts-ci:
+    name: Run staking-contracts validation
+    uses: ./.github/workflows/staking-contracts-ci.yaml
+
+  staking-frontend-ci:
+    name: Run staking-frontend validation
+    uses: ./.github/workflows/staking-frontend-ci.yaml
+
