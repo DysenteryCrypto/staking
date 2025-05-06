@@ -43,21 +43,21 @@ class UserStakeInfo extends arc4.Struct<{
  */
 @contract({ stateTotals: { globalBytes: 7 } })
 export class ASAStakingContract extends Contract {
-  assetId = GlobalState<uint64>({ initialValue: 0 })
-  adminAddress = GlobalState<Account>()
-  totalStaked = GlobalState<uint64>({ initialValue: 0 })
-  aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
-  lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
-  distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
-  minimumStake = GlobalState<uint64>({ initialValue: 0 })
+  public assetId = GlobalState<uint64>({ initialValue: 0 })
+  public adminAddress = GlobalState<Account>()
+  public totalStaked = GlobalState<uint64>({ initialValue: 0 })
+  public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
+  public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
+  public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
+  public minimumStake = GlobalState<uint64>({ initialValue: 0 })
 
-  stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+  public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
 
   /**
    * Helper function to get a user's box name
    * User address is used as the box name for simplicity
    */
-  getUserBoxName(userAddress: Account): arc4.Address {
+  public getUserBoxName(userAddress: Account): arc4.Address {
     const addr = new arc4.Address(userAddress.bytes)
     return addr
   }
@@ -65,7 +65,7 @@ export class ASAStakingContract extends Contract {
   /**
    * Helper function to read user stake info from box storage
    */
-  getUserStakeInfo(userAddress: Account): UserStakeInfo {
+  public getUserStakeInfo(userAddress: Account): UserStakeInfo {
     const userBox = this.stakers(userAddress)
 
     // Check if box exists
@@ -85,7 +85,7 @@ export class ASAStakingContract extends Contract {
   /**
    * Helper function to store user stake info in box storage
    */
-  storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
+  public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
     const userBox = this.stakers(userAddress)
     if (userBox.exists) {
       userBox.value = stakeInfo.copy()
@@ -96,7 +96,7 @@ export class ASAStakingContract extends Contract {
    * Initialize the contract with the ASA token ID and other parameters
    */
   @abimethod()
-  initialize(
+  public initialize(
     assetId: uint64,
     adminAddress: Account,
     aprBasisPoints: uint64,
@@ -123,7 +123,7 @@ export class ASAStakingContract extends Contract {
    * Opt the contract into the ASA
    */
   @abimethod()
-  optInToAsset(): void {
+  public optInToAsset(): void {
     // Ensure only the creator or admin can opt in
     const adminAddr = this.adminAddress.value
     assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
@@ -145,7 +145,7 @@ export class ASAStakingContract extends Contract {
    * Requires a companion ASA transfer transaction
    */
   @abimethod()
-  stake(): void {
+  public stake(): void {
     // Ensure the contract has opted into the ASA
     const assetId = this.assetId.value
     const asset = Asset(assetId)
@@ -189,7 +189,7 @@ export class ASAStakingContract extends Contract {
    * Withdraw staked tokens
    */
   @abimethod()
-  withdraw(amount: uint64): void {
+  public withdraw(amount: uint64): void {
     const senderAddress = Txn.sender
     const stakeInfo = this.getUserStakeInfo(senderAddress)
 
@@ -233,7 +233,7 @@ export class ASAStakingContract extends Contract {
    * Requires a companion ASA transfer transaction with the rewards
    */
   @abimethod()
-  distributeRewards(): void {
+  public distributeRewards(): void {
     // Ensure only admin can distribute rewards
     const adminAddr = this.adminAddress.value
     assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
@@ -266,8 +266,7 @@ export class ASAStakingContract extends Contract {
    * This is a read-only method that doesn't modify state
    */
   @abimethod({ readonly: true })
-  calculateUserRewards(userAddress: Account): uint64 {
-    const assetId = this.assetId.value
+  public calculateUserRewards(userAddress: Account): uint64 {
     const apr = this.aprBasisPoints.value
     const totalStaked = this.totalStaked.value
 
@@ -311,7 +310,7 @@ export class ASAStakingContract extends Contract {
    * This implements the pull-based reward model
    */
   @abimethod()
-  claimRewards(): void {
+  public claimRewards(): void {
     const senderAddress = Txn.sender
     const stakeInfo = this.getUserStakeInfo(senderAddress)
 
@@ -340,7 +339,7 @@ export class ASAStakingContract extends Contract {
    * Only the admin can call this
    */
   @abimethod()
-  updateAPR(newAprBasisPoints: uint64): void {
+  public updateAPR(newAprBasisPoints: uint64): void {
     // Ensure only admin can update APR
     const adminAddr = this.adminAddress.value
     assert(Txn.sender === adminAddr, 'Only admin can update APR')
@@ -354,7 +353,7 @@ export class ASAStakingContract extends Contract {
    * Only the current admin can call this
    */
   @abimethod()
-  updateAdmin(newAdminAddress: Account): void {
+  public updateAdmin(newAdminAddress: Account): void {
     // Ensure only admin can update admin
     const adminAddr = this.adminAddress.value
     assert(Txn.sender === adminAddr, 'Only admin can update admin')
@@ -367,7 +366,7 @@ export class ASAStakingContract extends Contract {
    * Get current staking statistics for a user
    */
   @abimethod({ readonly: true })
-  getUserStats(userAddress: Account): Array<uint64> {
+  public getUserStats(userAddress: Account): Array<uint64> {
     const userAddr = userAddress
     const stakeInfo = this.getUserStakeInfo(userAddr)
     const result: uint64[] = [
@@ -384,7 +383,7 @@ export class ASAStakingContract extends Contract {
    * Get contract global statistics
    */
   @abimethod({ readonly: true })
-  getContractStats(): Array<uint64> {
+  public getContractStats(): Array<uint64> {
     const result: uint64[] = [
       this.assetId.value,
       this.totalStaked.value,
@@ -402,7 +401,7 @@ export class ASAStakingContract extends Contract {
    * Can only be called by the box owner or admin
    */
   @abimethod()
-  deleteUserBox(userAddress: Account): void {
+  public deleteUserBox(userAddress: Account): void {
     const boxOwner = userAddress
     const adminAddr = this.adminAddress.value
 

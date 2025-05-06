@@ -28,7 +28,7 @@ describe('Staking contract', () => {
     return { client: appClient }
   }
 
-  test('says hello', async () => {
+  test('Initializes the contract', async () => {
     const { testAccount } = localnet.context
     const { client } = await deploy(testAccount)
 
@@ -40,19 +40,21 @@ describe('Staking contract', () => {
       total: 1000000000000n,
     })
 
-    const result = await client.send.initialize({
+    await client.send.initialize({
       args: {
         assetId: assetId,
         adminAddress: testAccount.addr.toString(),
         aprBasisPoints: 10000,
         distributionPeriodSeconds: 60 * 60 * 24,
-        minimumStake: 1000000000000n,
+        minimumStake: 1000,
       },
     })
 
-    console.log(result)
-
     expect(await client.state.global.assetId()).toEqual(assetId)
+    expect(await client.state.global.adminAddress()).toEqual(testAccount.addr.toString())
+    expect(await client.state.global.aprBasisPoints()).toEqual(10000n)
+    expect(await client.state.global.distributionPeriodSeconds()).toEqual(86400n) // 60 * 60 * 24 = 1 day
+    expect(await client.state.global.minimumStake()).toEqual(1000n)
   })
 
   /*
