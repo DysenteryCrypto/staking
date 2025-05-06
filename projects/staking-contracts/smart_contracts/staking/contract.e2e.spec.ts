@@ -28,7 +28,7 @@ describe('Staking contract', () => {
     return { client: appClient }
   }
 
-  test('says hello', async () => {
+  test('Initializes the contract', async () => {
     const { testAccount } = localnet.context
     const { client } = await deploy(testAccount)
 
@@ -46,7 +46,7 @@ describe('Staking contract', () => {
         adminAddress: testAccount.addr.toString(),
         aprBasisPoints: 10000,
         distributionPeriodSeconds: 60 * 60 * 24,
-        minimumStake: 1000000000000n,
+        minimumStake: 1000,
       },
     })
 
