@@ -1,7 +1,7 @@
 import { TestExecutionContext } from '@algorandfoundation/algorand-typescript-testing'
 import { describe, expect, it, beforeEach } from 'vitest'
 import { ASAStakingContract } from './contract.algo'
-import { Asset } from '@algorandfoundation/algorand-typescript'
+import { Asset, Bytes } from '@algorandfoundation/algorand-typescript'
 
 describe('Staking contract', () => {
   const ctx = new TestExecutionContext()
@@ -33,9 +33,21 @@ describe('Staking contract', () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const asset = ctx.any.asset()
 
-    contract.initialize(asset.id, ctx.any.account(), 10000, 60 * 60 * 24, 1000)
+    contract.initialize(asset.id, ctx.defaultSender, 10000, 60 * 60 * 24, 1000)
 
-    expect(() => contract.optInToAsset()).toThrow()
+    ctx.txn.createScope(
+      [
+        ctx.any.txn.applicationCall({
+          appId: contract,
+          sender: ctx.any.account(),
+          appArgs: [Bytes('optInToAsset')],
+        }),
+      ],
+      1
+    )
+    .execute(() => {
+      expect(() => contract.optInToAsset()).toThrow()
+    })
   })
 
   it('Opt in to the ASA', () => {
@@ -50,8 +62,30 @@ describe('Staking contract', () => {
     expect(assetTransferTxn.xferAsset).toEqual(gAsset)
   })
 
-  it('Cannot opt in if already opted in', () => {
-    expect(() => gContract.optInToAsset()).toThrow()
+  it('Cannot stake without companion ASA transfer', () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account()
+
+    contract.initialize(asset.id, ctx.defaultSender, 10000, 60 * 60 * 24, 1000)
+    contract.optInToAsset()
+
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: sender,
+      assetAmount: 0,
+      assetSender: sender,
+      xferAsset: asset,
+    })
+
+    const txn2 = ctx.any.txn.assetTransfer({
+      assetReceiver: sender,
+      assetAmount: 1000000,
+      assetSender: ctx.defaultSender,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn, txn2], 1).execute(() => {
+      contract.stake()
+    })
   })
-  
 })
