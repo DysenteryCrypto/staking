@@ -42,7 +42,7 @@ describe('Staking contract', () => {
 
     await client.send.initialize({
       args: {
-        assetId: assetId,
+        asset: assetId,
         adminAddress: testAccount.addr.toString(),
         aprBasisPoints: 10000,
         distributionPeriodSeconds: 60 * 60 * 24,
@@ -50,7 +50,7 @@ describe('Staking contract', () => {
       },
     })
 
-    expect(await client.state.global.assetId()).toEqual(assetId)
+    expect(await client.state.global.asset()).toEqual(assetId)
     expect(await client.state.global.adminAddress()).toEqual(testAccount.addr.toString())
     expect(await client.state.global.aprBasisPoints()).toEqual(10000n)
     expect(await client.state.global.distributionPeriodSeconds()).toEqual(86400n) // 60 * 60 * 24 = 1 day

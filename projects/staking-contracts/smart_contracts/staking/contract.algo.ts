@@ -43,8 +43,8 @@ class UserStakeInfo extends arc4.Struct<{
  */
 @contract({ stateTotals: { globalBytes: 7 } })
 export class ASAStakingContract extends Contract {
-  public assetId = GlobalState<uint64>({ initialValue: 0 })
-  public adminAddress = GlobalState<Account>()
+  public asset = GlobalState<Asset>({ initialValue: Asset() })
+  public adminAddress = GlobalState<Account>({ initialValue: Account()})
   public totalStaked = GlobalState<uint64>({ initialValue: 0 })
   public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
   public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -97,20 +97,20 @@ export class ASAStakingContract extends Contract {
    */
   @abimethod()
   public initialize(
-    assetId: uint64,
+    asset: Asset,
     adminAddress: Account,
     aprBasisPoints: uint64,
     distributionPeriodSeconds: uint64,
     minimumStake: uint64,
   ): void {
     // Ensure this is only called during contract creation
-    assert(this.assetId.value === 0, 'Already initialized')
+    assert(this.asset.value === Asset(), 'Already initialized')
 
     // Ensure only the creator can initialize
     assert(Txn.sender === Global.creatorAddress, 'Only creator can initialize')
 
     // Store the initial parameters
-    this.assetId.value = assetId
+    this.asset.value = asset
     this.adminAddress.value = adminAddress
     this.totalStaked.value = 0
     this.aprBasisPoints.value = aprBasisPoints
@@ -129,13 +129,12 @@ export class ASAStakingContract extends Contract {
     assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
 
     // Opt the contract into the ASA
-    const assetId = this.assetId.value
+    const asset = this.asset.value
     itxn
       .assetTransfer({
         assetReceiver: Global.currentApplicationAddress,
         assetAmount: 0,
-        xferAsset: assetId,
-        fee: 1000,
+        xferAsset: asset,
       })
       .submit()
   }
@@ -147,15 +146,14 @@ export class ASAStakingContract extends Contract {
   @abimethod()
   public stake(): void {
     // Ensure the contract has opted into the ASA
-    const assetId = this.assetId.value
-    const asset = Asset(assetId)
-    assert(asset.balance(Global.currentApplicationAddress) >= 0, 'Contract not opted in to ASA')
+    const asset = this.asset.value
+    assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
 
     // Ensure this call has a companion ASA transfer transaction
     assert(Global.groupSize === 2, 'Expected 2 txns in group')
 
     // Get the ASA transfer details
-    const xferTxn = gtxn.AssetTransferTxn(1)
+    const xferTxn = gtxn.AssetTransferTxn(0)
     assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
     assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
     assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
@@ -216,12 +214,12 @@ export class ASAStakingContract extends Contract {
     this.totalStaked.value = this.totalStaked.value - amount
 
     // Transfer tokens back to user
-    const assetId = this.assetId.value
+    const asset = this.asset.value
     itxn
       .assetTransfer({
         assetReceiver: Txn.sender,
         assetAmount: amount,
-        xferAsset: assetId,
+        xferAsset: asset,
         fee: 1000,
       })
       .submit()
@@ -242,7 +240,7 @@ export class ASAStakingContract extends Contract {
     assert(Global.groupSize === 2, 'Expected 2 txns in group')
 
     // Get the ASA transfer details
-    const asset = Asset(this.assetId.value)
+    const asset = this.asset.value
     const xferTxn = gtxn.AssetTransferTxn(1)
     assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
     assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
@@ -385,7 +383,7 @@ export class ASAStakingContract extends Contract {
   @abimethod({ readonly: true })
   public getContractStats(): Array<uint64> {
     const result: uint64[] = [
-      this.assetId.value,
+      this.asset.value.id,
       this.totalStaked.value,
       this.aprBasisPoints.value,
       this.lastDistributionTime.value,

@@ -4,13 +4,18 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 4 8
-    bytecblock "totalStaked" "assetId" "adminAddress" "lastDistributionTime" "aprBasisPoints" "minimumStake" 0x151f7c75 "distributionPeriodSeconds" "stakers"
+    bytecblock "totalStaked" "asset" "adminAddress" "lastDistributionTime" "aprBasisPoints" "minimumStake" 0x151f7c75 "distributionPeriodSeconds" "stakers"
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    bytec_1 // "assetId"
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
+    bytec_1 // "asset"
     intc_0 // 0
+    app_global_put
+    // smart_contracts/staking/contract.algo.ts:47
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
+    bytec_2 // "adminAddress"
+    global ZeroAddress
     app_global_put
     // smart_contracts/staking/contract.algo.ts:48
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
@@ -44,7 +49,7 @@ main_after_if_else@2:
     // export class ASAStakingContract extends Contract {
     txn NumAppArgs
     bz main_bare_routing@22
-    pushbytess 0xa9b56b38 0x124ba026 0x83786954 0x4184bb17 0x9ffd3e53 0x0890bd58 0x21f1ddff 0xb0a93807 0x411cec23 0xa5ae6bd1 0x1e6612bd 0x82ab1ec4 0x15766b09 0xbfe31564 0xdc9a2a05 // method "getUserBoxName(account)address", method "getUserStakeInfo(account)(uint64,uint64,uint64)", method "storeUserStakeInfo(account,(uint64,uint64,uint64))void", method "initialize(uint64,account,uint64,uint64,uint64)void", method "optInToAsset()void", method "stake()void", method "withdraw(uint64)void", method "distributeRewards()void", method "calculateUserRewards(account)uint64", method "claimRewards()void", method "updateAPR(uint64)void", method "updateAdmin(account)void", method "getUserStats(account)uint64[]", method "getContractStats()uint64[]", method "deleteUserBox(account)void"
+    pushbytess 0xa9b56b38 0x124ba026 0x83786954 0x667c5d30 0x9ffd3e53 0x0890bd58 0x21f1ddff 0xb0a93807 0x411cec23 0xa5ae6bd1 0x1e6612bd 0x82ab1ec4 0x15766b09 0xbfe31564 0xdc9a2a05 // method "getUserBoxName(account)address", method "getUserStakeInfo(account)(uint64,uint64,uint64)", method "storeUserStakeInfo(account,(uint64,uint64,uint64))void", method "initialize(asset,account,uint64,uint64,uint64)void", method "optInToAsset()void", method "stake()void", method "withdraw(uint64)void", method "distributeRewards()void", method "calculateUserRewards(account)uint64", method "claimRewards()void", method "updateAPR(uint64)void", method "updateAdmin(account)void", method "getUserStats(account)uint64[]", method "getContractStats()uint64[]", method "deleteUserBox(account)void"
     txna ApplicationArgs 0
     match main_getUserBoxName_route@5 main_getUserStakeInfo_route@6 main_storeUserStakeInfo_route@7 main_initialize_route@8 main_optInToAsset_route@9 main_stake_route@10 main_withdraw_route@11 main_distributeRewards_route@12 main_calculateUserRewards_route@13 main_claimRewards_route@14 main_updateAPR_route@15 main_updateAdmin_route@16 main_getUserStats_route@17 main_getContractStats_route@18 main_deleteUserBox_route@19
 
@@ -56,7 +61,7 @@ main_after_if_else@26:
     return
 
 main_deleteUserBox_route@19:
-    // smart_contracts/staking/contract.algo.ts:403
+    // smart_contracts/staking/contract.algo.ts:401
     // @abimethod()
     txn OnCompletion
     !
@@ -69,14 +74,14 @@ main_deleteUserBox_route@19:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:403
+    // smart_contracts/staking/contract.algo.ts:401
     // @abimethod()
     callsub deleteUserBox
     intc_1 // 1
     return
 
 main_getContractStats_route@18:
-    // smart_contracts/staking/contract.algo.ts:385
+    // smart_contracts/staking/contract.algo.ts:383
     // @abimethod({ readonly: true })
     txn OnCompletion
     !
@@ -92,7 +97,7 @@ main_getContractStats_route@18:
     return
 
 main_getUserStats_route@17:
-    // smart_contracts/staking/contract.algo.ts:368
+    // smart_contracts/staking/contract.algo.ts:366
     // @abimethod({ readonly: true })
     txn OnCompletion
     !
@@ -105,7 +110,7 @@ main_getUserStats_route@17:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:368
+    // smart_contracts/staking/contract.algo.ts:366
     // @abimethod({ readonly: true })
     callsub getUserStats
     bytec 6 // 0x151f7c75
@@ -116,7 +121,7 @@ main_getUserStats_route@17:
     return
 
 main_updateAdmin_route@16:
-    // smart_contracts/staking/contract.algo.ts:355
+    // smart_contracts/staking/contract.algo.ts:353
     // @abimethod()
     txn OnCompletion
     !
@@ -129,14 +134,14 @@ main_updateAdmin_route@16:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:355
+    // smart_contracts/staking/contract.algo.ts:353
     // @abimethod()
     callsub updateAdmin
     intc_1 // 1
     return
 
 main_updateAPR_route@15:
-    // smart_contracts/staking/contract.algo.ts:341
+    // smart_contracts/staking/contract.algo.ts:339
     // @abimethod()
     txn OnCompletion
     !
@@ -148,14 +153,14 @@ main_updateAPR_route@15:
     // export class ASAStakingContract extends Contract {
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/staking/contract.algo.ts:341
+    // smart_contracts/staking/contract.algo.ts:339
     // @abimethod()
     callsub updateAPR
     intc_1 // 1
     return
 
 main_claimRewards_route@14:
-    // smart_contracts/staking/contract.algo.ts:312
+    // smart_contracts/staking/contract.algo.ts:310
     // @abimethod()
     txn OnCompletion
     !
@@ -167,7 +172,7 @@ main_claimRewards_route@14:
     return
 
 main_calculateUserRewards_route@13:
-    // smart_contracts/staking/contract.algo.ts:268
+    // smart_contracts/staking/contract.algo.ts:266
     // @abimethod({ readonly: true })
     txn OnCompletion
     !
@@ -180,7 +185,7 @@ main_calculateUserRewards_route@13:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:268
+    // smart_contracts/staking/contract.algo.ts:266
     // @abimethod({ readonly: true })
     callsub calculateUserRewards
     itob
@@ -192,7 +197,7 @@ main_calculateUserRewards_route@13:
     return
 
 main_distributeRewards_route@12:
-    // smart_contracts/staking/contract.algo.ts:235
+    // smart_contracts/staking/contract.algo.ts:233
     // @abimethod()
     txn OnCompletion
     !
@@ -204,7 +209,7 @@ main_distributeRewards_route@12:
     return
 
 main_withdraw_route@11:
-    // smart_contracts/staking/contract.algo.ts:191
+    // smart_contracts/staking/contract.algo.ts:189
     // @abimethod()
     txn OnCompletion
     !
@@ -216,14 +221,14 @@ main_withdraw_route@11:
     // export class ASAStakingContract extends Contract {
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/staking/contract.algo.ts:191
+    // smart_contracts/staking/contract.algo.ts:189
     // @abimethod()
     callsub withdraw
     intc_1 // 1
     return
 
 main_stake_route@10:
-    // smart_contracts/staking/contract.algo.ts:147
+    // smart_contracts/staking/contract.algo.ts:146
     // @abimethod()
     txn OnCompletion
     !
@@ -259,6 +264,7 @@ main_initialize_route@8:
     // export class ASAStakingContract extends Contract {
     txna ApplicationArgs 1
     btoi
+    txnas Assets
     txna ApplicationArgs 2
     btoi
     txnas Accounts
@@ -434,12 +440,12 @@ storeUserStakeInfo_after_if_else@2:
     retsub
 
 
-// smart_contracts/staking/contract.algo.ts::ASAStakingContract.initialize(assetId: uint64, adminAddress: bytes, aprBasisPoints: uint64, distributionPeriodSeconds: uint64, minimumStake: uint64) -> void:
+// smart_contracts/staking/contract.algo.ts::ASAStakingContract.initialize(asset: uint64, adminAddress: bytes, aprBasisPoints: uint64, distributionPeriodSeconds: uint64, minimumStake: uint64) -> void:
 initialize:
     // smart_contracts/staking/contract.algo.ts:98-105
     // @abimethod()
     // public initialize(
-    //   assetId: uint64,
+    //   asset: Asset,
     //   adminAddress: Account,
     //   aprBasisPoints: uint64,
     //   distributionPeriodSeconds: uint64,
@@ -447,13 +453,13 @@ initialize:
     // ): void {
     proto 5 0
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     intc_0 // 0
-    bytec_1 // "assetId"
+    bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:107
-    // assert(this.assetId.value === 0, 'Already initialized')
+    // assert(this.asset.value === Asset(), 'Already initialized')
     !
     assert // Already initialized
     // smart_contracts/staking/contract.algo.ts:110
@@ -463,14 +469,14 @@ initialize:
     ==
     assert // Only creator can initialize
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    bytec_1 // "assetId"
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
+    bytec_1 // "asset"
     // smart_contracts/staking/contract.algo.ts:113
-    // this.assetId.value = assetId
+    // this.asset.value = asset
     frame_dig -5
     app_global_put
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     bytec_2 // "adminAddress"
     // smart_contracts/staking/contract.algo.ts:114
     // this.adminAddress.value = adminAddress
@@ -521,7 +527,7 @@ optInToAsset:
     // public optInToAsset(): void {
     proto 0 0
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
     bytec_2 // "adminAddress"
     app_global_get_ex
@@ -545,18 +551,17 @@ optInToAsset_bool_merge@4:
     // assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
     assert // Only creator or admin can opt in
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     intc_0 // 0
-    bytec_1 // "assetId"
+    bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:133-140
+    // smart_contracts/staking/contract.algo.ts:133-139
     // itxn
     //   .assetTransfer({
     //     assetReceiver: Global.currentApplicationAddress,
     //     assetAmount: 0,
-    //     xferAsset: assetId,
-    //     fee: 1000,
+    //     xferAsset: asset,
     //   })
     //   .submit()
     itxn_begin
@@ -570,27 +575,23 @@ optInToAsset_bool_merge@4:
     intc_0 // 0
     itxn_field AssetAmount
     itxn_field AssetReceiver
+    // smart_contracts/staking/contract.algo.ts:133-138
+    // itxn
+    //   .assetTransfer({
+    //     assetReceiver: Global.currentApplicationAddress,
+    //     assetAmount: 0,
+    //     xferAsset: asset,
+    //   })
+    intc_2 // 4
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
     // smart_contracts/staking/contract.algo.ts:133-139
     // itxn
     //   .assetTransfer({
     //     assetReceiver: Global.currentApplicationAddress,
     //     assetAmount: 0,
-    //     xferAsset: assetId,
-    //     fee: 1000,
-    //   })
-    intc_2 // 4
-    itxn_field TypeEnum
-    // smart_contracts/staking/contract.algo.ts:138
-    // fee: 1000,
-    pushint 1000 // 1000
-    itxn_field Fee
-    // smart_contracts/staking/contract.algo.ts:133-140
-    // itxn
-    //   .assetTransfer({
-    //     assetReceiver: Global.currentApplicationAddress,
-    //     assetAmount: 0,
-    //     xferAsset: assetId,
-    //     fee: 1000,
+    //     xferAsset: asset,
     //   })
     //   .submit()
     itxn_submit
@@ -603,64 +604,64 @@ optInToAsset_bool_false@3:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.stake() -> void:
 stake:
-    // smart_contracts/staking/contract.algo.ts:147-148
+    // smart_contracts/staking/contract.algo.ts:146-147
     // @abimethod()
     // public stake(): void {
     proto 0 0
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     intc_0 // 0
-    bytec_1 // "assetId"
+    bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:152
-    // assert(asset.balance(Global.currentApplicationAddress) >= 0, 'Contract not opted in to ASA')
-    global CurrentApplicationAddress
-    dig 1
-    asset_holding_get AssetBalance
-    bury 1
-    assert // account opted into asset
-    // smart_contracts/staking/contract.algo.ts:155
+    intc_0 // 0
+    bytec_1 // "asset"
+    app_global_get_ex
+    assert // check GlobalState exists
+    // smart_contracts/staking/contract.algo.ts:150
+    // assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    assert // Contract not opted in to ASA
+    // smart_contracts/staking/contract.algo.ts:153
     // assert(Global.groupSize === 2, 'Expected 2 txns in group')
     global GroupSize
     pushint 2 // 2
     ==
     assert // Expected 2 txns in group
-    // smart_contracts/staking/contract.algo.ts:158
-    // const xferTxn = gtxn.AssetTransferTxn(1)
-    intc_1 // 1
+    // smart_contracts/staking/contract.algo.ts:156
+    // const xferTxn = gtxn.AssetTransferTxn(0)
+    intc_0 // 0
     gtxns TypeEnum
     dup
     intc_2 // axfer
     ==
     assert // transaction type is axfer
-    // smart_contracts/staking/contract.algo.ts:159
+    // smart_contracts/staking/contract.algo.ts:157
     // assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
     intc_2 // 4
     ==
     assert // Transaction 1 must be asset transfer
+    // smart_contracts/staking/contract.algo.ts:156
+    // const xferTxn = gtxn.AssetTransferTxn(0)
+    intc_0 // 0
     // smart_contracts/staking/contract.algo.ts:158
-    // const xferTxn = gtxn.AssetTransferTxn(1)
-    intc_1 // 1
-    // smart_contracts/staking/contract.algo.ts:160
     // assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
     gtxns AssetReceiver
     global CurrentApplicationAddress
     ==
     assert // Asset transfer must be to contract
-    // smart_contracts/staking/contract.algo.ts:158
-    // const xferTxn = gtxn.AssetTransferTxn(1)
-    intc_1 // 1
-    // smart_contracts/staking/contract.algo.ts:161
+    // smart_contracts/staking/contract.algo.ts:156
+    // const xferTxn = gtxn.AssetTransferTxn(0)
+    intc_0 // 0
+    // smart_contracts/staking/contract.algo.ts:159
     // assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
     gtxns AssetAmount
     dup
     cover 2
     assert // Must stake non-zero amount
-    // smart_contracts/staking/contract.algo.ts:158
-    // const xferTxn = gtxn.AssetTransferTxn(1)
-    intc_1 // 1
-    // smart_contracts/staking/contract.algo.ts:162
+    // smart_contracts/staking/contract.algo.ts:156
+    // const xferTxn = gtxn.AssetTransferTxn(0)
+    intc_0 // 0
+    // smart_contracts/staking/contract.algo.ts:160
     // assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
     gtxns XferAsset
     ==
@@ -671,21 +672,21 @@ stake:
     bytec 5 // "minimumStake"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:169
+    // smart_contracts/staking/contract.algo.ts:167
     // const senderAddress = Txn.sender
     txn Sender
     dup
-    // smart_contracts/staking/contract.algo.ts:170
+    // smart_contracts/staking/contract.algo.ts:168
     // const stakeInfo = this.getUserStakeInfo(senderAddress)
     callsub getUserStakeInfo
     dup
-    // smart_contracts/staking/contract.algo.ts:173
+    // smart_contracts/staking/contract.algo.ts:171
     // if (stakeInfo.stakedAmount.native === 0) {
     intc_0 // 0
     extract_uint64
     dup
     bnz stake_after_if_else@2
-    // smart_contracts/staking/contract.algo.ts:174
+    // smart_contracts/staking/contract.algo.ts:172
     // assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
     frame_dig 0
     frame_dig 1
@@ -693,7 +694,7 @@ stake:
     assert // Initial stake below minimum
 
 stake_after_if_else@2:
-    // smart_contracts/staking/contract.algo.ts:178
+    // smart_contracts/staking/contract.algo.ts:176
     // stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
     frame_dig 4
     frame_dig 0
@@ -704,12 +705,12 @@ stake_after_if_else@2:
     frame_dig 3
     swap
     replace2 0
-    // smart_contracts/staking/contract.algo.ts:179
+    // smart_contracts/staking/contract.algo.ts:177
     // stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
     global LatestTimestamp
     itob
     replace2 8
-    // smart_contracts/staking/contract.algo.ts:182
+    // smart_contracts/staking/contract.algo.ts:180
     // this.storeUserStakeInfo(senderAddress, stakeInfo)
     frame_dig 2
     swap
@@ -721,13 +722,13 @@ stake_after_if_else@2:
     bytec_0 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:185
+    // smart_contracts/staking/contract.algo.ts:183
     // this.totalStaked.value = this.totalStaked.value + stakeAmount
     +
     // smart_contracts/staking/contract.algo.ts:48
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     bytec_0 // "totalStaked"
-    // smart_contracts/staking/contract.algo.ts:185
+    // smart_contracts/staking/contract.algo.ts:183
     // this.totalStaked.value = this.totalStaked.value + stakeAmount
     swap
     app_global_put
@@ -736,40 +737,40 @@ stake_after_if_else@2:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.withdraw(amount: uint64) -> void:
 withdraw:
-    // smart_contracts/staking/contract.algo.ts:191-192
+    // smart_contracts/staking/contract.algo.ts:189-190
     // @abimethod()
     // public withdraw(amount: uint64): void {
     proto 1 0
-    // smart_contracts/staking/contract.algo.ts:193
+    // smart_contracts/staking/contract.algo.ts:191
     // const senderAddress = Txn.sender
     txn Sender
     dup
-    // smart_contracts/staking/contract.algo.ts:194
+    // smart_contracts/staking/contract.algo.ts:192
     // const stakeInfo = this.getUserStakeInfo(senderAddress)
     callsub getUserStakeInfo
     dup
-    // smart_contracts/staking/contract.algo.ts:197
+    // smart_contracts/staking/contract.algo.ts:195
     // assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
     intc_0 // 0
     extract_uint64
     dupn 2
     assert // No stake found
-    // smart_contracts/staking/contract.algo.ts:198
+    // smart_contracts/staking/contract.algo.ts:196
     // assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
     frame_dig -1
     dig 1
     <=
     assert // Withdrawal amount exceeds stake
-    // smart_contracts/staking/contract.algo.ts:199
+    // smart_contracts/staking/contract.algo.ts:197
     // assert(amount > 0, 'Withdrawal amount must be positive')
     frame_dig -1
     assert // Withdrawal amount must be positive
-    // smart_contracts/staking/contract.algo.ts:203
+    // smart_contracts/staking/contract.algo.ts:201
     // if (amount < stakeInfo.stakedAmount.native) {
     frame_dig -1
     >
     bz withdraw_after_if_else@2
-    // smart_contracts/staking/contract.algo.ts:204
+    // smart_contracts/staking/contract.algo.ts:202
     // const remainingStake: uint64 = stakeInfo.stakedAmount.native - amount
     frame_dig 2
     frame_dig -1
@@ -780,13 +781,13 @@ withdraw:
     bytec 5 // "minimumStake"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:206
+    // smart_contracts/staking/contract.algo.ts:204
     // assert(remainingStake >= minimumStake, 'Remaining stake would be below minimum')
     >=
     assert // Remaining stake would be below minimum
 
 withdraw_after_if_else@2:
-    // smart_contracts/staking/contract.algo.ts:210
+    // smart_contracts/staking/contract.algo.ts:208
     // stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
     frame_dig 2
     frame_dig -1
@@ -795,7 +796,7 @@ withdraw_after_if_else@2:
     frame_dig 1
     swap
     replace2 0
-    // smart_contracts/staking/contract.algo.ts:213
+    // smart_contracts/staking/contract.algo.ts:211
     // this.storeUserStakeInfo(senderAddress, stakeInfo)
     frame_dig 0
     swap
@@ -807,34 +808,34 @@ withdraw_after_if_else@2:
     bytec_0 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:216
+    // smart_contracts/staking/contract.algo.ts:214
     // this.totalStaked.value = this.totalStaked.value - amount
     frame_dig -1
     -
     // smart_contracts/staking/contract.algo.ts:48
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     bytec_0 // "totalStaked"
-    // smart_contracts/staking/contract.algo.ts:216
+    // smart_contracts/staking/contract.algo.ts:214
     // this.totalStaked.value = this.totalStaked.value - amount
     swap
     app_global_put
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     intc_0 // 0
-    bytec_1 // "assetId"
+    bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:220-227
+    // smart_contracts/staking/contract.algo.ts:218-225
     // itxn
     //   .assetTransfer({
     //     assetReceiver: Txn.sender,
     //     assetAmount: amount,
-    //     xferAsset: assetId,
+    //     xferAsset: asset,
     //     fee: 1000,
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/staking/contract.algo.ts:222
+    // smart_contracts/staking/contract.algo.ts:220
     // assetReceiver: Txn.sender,
     txn Sender
     swap
@@ -842,26 +843,26 @@ withdraw_after_if_else@2:
     frame_dig -1
     itxn_field AssetAmount
     itxn_field AssetReceiver
-    // smart_contracts/staking/contract.algo.ts:220-226
+    // smart_contracts/staking/contract.algo.ts:218-224
     // itxn
     //   .assetTransfer({
     //     assetReceiver: Txn.sender,
     //     assetAmount: amount,
-    //     xferAsset: assetId,
+    //     xferAsset: asset,
     //     fee: 1000,
     //   })
     intc_2 // 4
     itxn_field TypeEnum
-    // smart_contracts/staking/contract.algo.ts:225
+    // smart_contracts/staking/contract.algo.ts:223
     // fee: 1000,
     pushint 1000 // 1000
     itxn_field Fee
-    // smart_contracts/staking/contract.algo.ts:220-227
+    // smart_contracts/staking/contract.algo.ts:218-225
     // itxn
     //   .assetTransfer({
     //     assetReceiver: Txn.sender,
     //     assetAmount: amount,
-    //     xferAsset: assetId,
+    //     xferAsset: asset,
     //     fee: 1000,
     //   })
     //   .submit()
@@ -872,29 +873,29 @@ withdraw_after_if_else@2:
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.distributeRewards() -> void:
 distributeRewards:
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
     bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:239
+    // smart_contracts/staking/contract.algo.ts:237
     // assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
     txn Sender
     ==
     assert // Only admin can distribute rewards
-    // smart_contracts/staking/contract.algo.ts:242
+    // smart_contracts/staking/contract.algo.ts:240
     // assert(Global.groupSize === 2, 'Expected 2 txns in group')
     global GroupSize
     pushint 2 // 2
     ==
     assert // Expected 2 txns in group
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     intc_0 // 0
-    bytec_1 // "assetId"
+    bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:246
+    // smart_contracts/staking/contract.algo.ts:244
     // const xferTxn = gtxn.AssetTransferTxn(1)
     intc_1 // 1
     gtxns TypeEnum
@@ -902,36 +903,36 @@ distributeRewards:
     intc_2 // axfer
     ==
     assert // transaction type is axfer
-    // smart_contracts/staking/contract.algo.ts:247
+    // smart_contracts/staking/contract.algo.ts:245
     // assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
     intc_2 // 4
     ==
     assert // Transaction 1 must be asset transfer
-    // smart_contracts/staking/contract.algo.ts:246
+    // smart_contracts/staking/contract.algo.ts:244
     // const xferTxn = gtxn.AssetTransferTxn(1)
     intc_1 // 1
-    // smart_contracts/staking/contract.algo.ts:248
+    // smart_contracts/staking/contract.algo.ts:246
     // assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
     gtxns AssetReceiver
     global CurrentApplicationAddress
     ==
     assert // Asset transfer must be to contract
-    // smart_contracts/staking/contract.algo.ts:246
+    // smart_contracts/staking/contract.algo.ts:244
     // const xferTxn = gtxn.AssetTransferTxn(1)
     intc_1 // 1
-    // smart_contracts/staking/contract.algo.ts:249
+    // smart_contracts/staking/contract.algo.ts:247
     // assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
     gtxns AssetAmount
     assert // Must provide non-zero rewards
-    // smart_contracts/staking/contract.algo.ts:246
+    // smart_contracts/staking/contract.algo.ts:244
     // const xferTxn = gtxn.AssetTransferTxn(1)
     intc_1 // 1
-    // smart_contracts/staking/contract.algo.ts:250
+    // smart_contracts/staking/contract.algo.ts:248
     // assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
     gtxns XferAsset
     ==
     assert // Incorrect asset ID
-    // smart_contracts/staking/contract.algo.ts:253
+    // smart_contracts/staking/contract.algo.ts:251
     // const currentTime = Global.latestTimestamp
     global LatestTimestamp
     // smart_contracts/staking/contract.algo.ts:50
@@ -946,7 +947,7 @@ distributeRewards:
     bytec 7 // "distributionPeriodSeconds"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:256
+    // smart_contracts/staking/contract.algo.ts:254
     // assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
     +
     dig 1
@@ -955,7 +956,7 @@ distributeRewards:
     // smart_contracts/staking/contract.algo.ts:50
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     bytec_3 // "lastDistributionTime"
-    // smart_contracts/staking/contract.algo.ts:259
+    // smart_contracts/staking/contract.algo.ts:257
     // this.lastDistributionTime.value = currentTime
     swap
     app_global_put
@@ -964,7 +965,7 @@ distributeRewards:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.calculateUserRewards(userAddress: bytes) -> uint64:
 calculateUserRewards:
-    // smart_contracts/staking/contract.algo.ts:268-269
+    // smart_contracts/staking/contract.algo.ts:266-267
     // @abimethod({ readonly: true })
     // public calculateUserRewards(userAddress: Account): uint64 {
     proto 1 1
@@ -982,30 +983,30 @@ calculateUserRewards:
     bytec_0 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:274
+    // smart_contracts/staking/contract.algo.ts:272
     // if (totalStaked === 0) {
     bnz calculateUserRewards_after_if_else@2
-    // smart_contracts/staking/contract.algo.ts:275
+    // smart_contracts/staking/contract.algo.ts:273
     // return 0
     intc_0 // 0
     frame_bury 0
     retsub
 
 calculateUserRewards_after_if_else@2:
-    // smart_contracts/staking/contract.algo.ts:280
+    // smart_contracts/staking/contract.algo.ts:278
     // const stakeInfo = this.getUserStakeInfo(userAddr)
     frame_dig -1
     callsub getUserStakeInfo
     dup
     frame_bury 0
-    // smart_contracts/staking/contract.algo.ts:283
+    // smart_contracts/staking/contract.algo.ts:281
     // if (stakeInfo.stakedAmount.native === 0) {
     intc_0 // 0
     extract_uint64
     dup
     frame_bury 1
     bnz calculateUserRewards_after_if_else@4
-    // smart_contracts/staking/contract.algo.ts:284
+    // smart_contracts/staking/contract.algo.ts:282
     // return 0
     intc_0 // 0
     frame_bury 0
@@ -1018,27 +1019,27 @@ calculateUserRewards_after_if_else@4:
     bytec_3 // "lastDistributionTime"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:295
+    // smart_contracts/staking/contract.algo.ts:293
     // if (lastStakeTime.native + 86400 > lastDistributionTime) {
     frame_dig 0
-    // smart_contracts/staking/contract.algo.ts:289
+    // smart_contracts/staking/contract.algo.ts:287
     // const lastStakeTime = stakeInfo.lastStakeTime
     intc_3 // 8
-    // smart_contracts/staking/contract.algo.ts:295
+    // smart_contracts/staking/contract.algo.ts:293
     // if (lastStakeTime.native + 86400 > lastDistributionTime) {
     extract_uint64
     pushint 86400 // 86400
     +
     <
     bz calculateUserRewards_after_if_else@6
-    // smart_contracts/staking/contract.algo.ts:296
+    // smart_contracts/staking/contract.algo.ts:294
     // return 0
     intc_0 // 0
     frame_bury 0
     retsub
 
 calculateUserRewards_after_if_else@6:
-    // smart_contracts/staking/contract.algo.ts:302
+    // smart_contracts/staking/contract.algo.ts:300
     // const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
     frame_dig 2
     pushint 100 // 100
@@ -1047,13 +1048,13 @@ calculateUserRewards_after_if_else@6:
     /
     pushint 10000 // 10000
     *
-    // smart_contracts/staking/contract.algo.ts:303
+    // smart_contracts/staking/contract.algo.ts:301
     // const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
     frame_dig 1
     *
     pushint 10000 // 10000
     /
-    // smart_contracts/staking/contract.algo.ts:305
+    // smart_contracts/staking/contract.algo.ts:303
     // return reward
     frame_bury 0
     retsub
@@ -1061,29 +1062,29 @@ calculateUserRewards_after_if_else@6:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.claimRewards() -> void:
 claimRewards:
-    // smart_contracts/staking/contract.algo.ts:314
+    // smart_contracts/staking/contract.algo.ts:312
     // const senderAddress = Txn.sender
     txn Sender
-    // smart_contracts/staking/contract.algo.ts:315
+    // smart_contracts/staking/contract.algo.ts:313
     // const stakeInfo = this.getUserStakeInfo(senderAddress)
     dup
     callsub getUserStakeInfo
-    // smart_contracts/staking/contract.algo.ts:318
+    // smart_contracts/staking/contract.algo.ts:316
     // assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
     dup
     intc_0 // 0
     extract_uint64
     dup
     assert // No stake found
-    // smart_contracts/staking/contract.algo.ts:321
+    // smart_contracts/staking/contract.algo.ts:319
     // const reward = this.calculateUserRewards(Txn.sender)
     txn Sender
     callsub calculateUserRewards
-    // smart_contracts/staking/contract.algo.ts:322
+    // smart_contracts/staking/contract.algo.ts:320
     // assert(reward > 0, 'No rewards to claim')
     dup
     assert // No rewards to claim
-    // smart_contracts/staking/contract.algo.ts:325
+    // smart_contracts/staking/contract.algo.ts:323
     // stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
     swap
     dig 1
@@ -1092,7 +1093,7 @@ claimRewards:
     uncover 2
     swap
     replace2 0
-    // smart_contracts/staking/contract.algo.ts:328
+    // smart_contracts/staking/contract.algo.ts:326
     // stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
     dup
     pushint 16 // 16
@@ -1101,7 +1102,7 @@ claimRewards:
     +
     itob
     replace2 16
-    // smart_contracts/staking/contract.algo.ts:331
+    // smart_contracts/staking/contract.algo.ts:329
     // this.storeUserStakeInfo(senderAddress, stakeInfo)
     uncover 2
     swap
@@ -1113,13 +1114,13 @@ claimRewards:
     bytec_0 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:334
+    // smart_contracts/staking/contract.algo.ts:332
     // this.totalStaked.value = this.totalStaked.value + reward
     +
     // smart_contracts/staking/contract.algo.ts:48
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     bytec_0 // "totalStaked"
-    // smart_contracts/staking/contract.algo.ts:334
+    // smart_contracts/staking/contract.algo.ts:332
     // this.totalStaked.value = this.totalStaked.value + reward
     swap
     app_global_put
@@ -1128,17 +1129,17 @@ claimRewards:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.updateAPR(newAprBasisPoints: uint64) -> void:
 updateAPR:
-    // smart_contracts/staking/contract.algo.ts:341-342
+    // smart_contracts/staking/contract.algo.ts:339-340
     // @abimethod()
     // public updateAPR(newAprBasisPoints: uint64): void {
     proto 1 0
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
     bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:345
+    // smart_contracts/staking/contract.algo.ts:343
     // assert(Txn.sender === adminAddr, 'Only admin can update APR')
     txn Sender
     ==
@@ -1146,7 +1147,7 @@ updateAPR:
     // smart_contracts/staking/contract.algo.ts:49
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     bytec 4 // "aprBasisPoints"
-    // smart_contracts/staking/contract.algo.ts:348
+    // smart_contracts/staking/contract.algo.ts:346
     // this.aprBasisPoints.value = newAprBasisPoints
     frame_dig -1
     app_global_put
@@ -1155,25 +1156,25 @@ updateAPR:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.updateAdmin(newAdminAddress: bytes) -> void:
 updateAdmin:
-    // smart_contracts/staking/contract.algo.ts:355-356
+    // smart_contracts/staking/contract.algo.ts:353-354
     // @abimethod()
     // public updateAdmin(newAdminAddress: Account): void {
     proto 1 0
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
     bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:359
+    // smart_contracts/staking/contract.algo.ts:357
     // assert(Txn.sender === adminAddr, 'Only admin can update admin')
     txn Sender
     ==
     assert // Only admin can update admin
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     bytec_2 // "adminAddress"
-    // smart_contracts/staking/contract.algo.ts:362
+    // smart_contracts/staking/contract.algo.ts:360
     // this.adminAddress.value = newAdminAddress
     frame_dig -1
     app_global_put
@@ -1182,62 +1183,62 @@ updateAdmin:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.getUserStats(userAddress: bytes) -> bytes:
 getUserStats:
-    // smart_contracts/staking/contract.algo.ts:368-369
+    // smart_contracts/staking/contract.algo.ts:366-367
     // @abimethod({ readonly: true })
     // public getUserStats(userAddress: Account): Array<uint64> {
     proto 1 1
-    // smart_contracts/staking/contract.algo.ts:371
+    // smart_contracts/staking/contract.algo.ts:369
     // const stakeInfo = this.getUserStakeInfo(userAddr)
     frame_dig -1
     callsub getUserStakeInfo
-    // smart_contracts/staking/contract.algo.ts:373
+    // smart_contracts/staking/contract.algo.ts:371
     // stakeInfo.stakedAmount.native,
     dup
     intc_0 // 0
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:374
+    // smart_contracts/staking/contract.algo.ts:372
     // stakeInfo.lastStakeTime.native,
     dig 1
     intc_3 // 8
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:375
+    // smart_contracts/staking/contract.algo.ts:373
     // stakeInfo.totalRewardsEarned.native,
     uncover 2
     pushint 16 // 16
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:376
+    // smart_contracts/staking/contract.algo.ts:374
     // this.calculateUserRewards(userAddress),
     frame_dig -1
     callsub calculateUserRewards
-    // smart_contracts/staking/contract.algo.ts:373
+    // smart_contracts/staking/contract.algo.ts:371
     // stakeInfo.stakedAmount.native,
     uncover 3
     itob
-    // smart_contracts/staking/contract.algo.ts:374
+    // smart_contracts/staking/contract.algo.ts:372
     // stakeInfo.lastStakeTime.native,
     uncover 3
     itob
-    // smart_contracts/staking/contract.algo.ts:373-376
+    // smart_contracts/staking/contract.algo.ts:371-374
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
     // this.calculateUserRewards(userAddress),
     concat
-    // smart_contracts/staking/contract.algo.ts:375
+    // smart_contracts/staking/contract.algo.ts:373
     // stakeInfo.totalRewardsEarned.native,
     uncover 2
     itob
-    // smart_contracts/staking/contract.algo.ts:373-376
+    // smart_contracts/staking/contract.algo.ts:371-374
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
     // this.calculateUserRewards(userAddress),
     concat
-    // smart_contracts/staking/contract.algo.ts:376
+    // smart_contracts/staking/contract.algo.ts:374
     // this.calculateUserRewards(userAddress),
     swap
     itob
-    // smart_contracts/staking/contract.algo.ts:373-376
+    // smart_contracts/staking/contract.algo.ts:371-374
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
@@ -1251,7 +1252,7 @@ getUserStats:
     extract 6 2
     swap
     concat
-    // smart_contracts/staking/contract.algo.ts:379
+    // smart_contracts/staking/contract.algo.ts:377
     // return result
     retsub
 
@@ -1259,9 +1260,9 @@ getUserStats:
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.getContractStats() -> bytes:
 getContractStats:
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     intc_0 // 0
-    bytec_1 // "assetId"
+    bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:48
@@ -1295,73 +1296,1733 @@ getContractStats:
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:46
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
+    // public asset = GlobalState<Asset>({ initialValue: Asset() })
     uncover 5
     itob
     // smart_contracts/staking/contract.algo.ts:48
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     uncover 5
     itob
-    // smart_contracts/staking/contract.algo.ts:46-52
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    // public adminAddress = GlobalState<Account>()
+    // smart_contracts/staking/contract.algo.ts:48-386
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
+    // 
+    // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+    // 
+    // /**
+    //  * Helper function to get a user's box name
+    //  * User address is used as the box name for simplicity
+    //  */
+    // public getUserBoxName(userAddress: Account): arc4.Address {
+    //   const addr = new arc4.Address(userAddress.bytes)
+    //   return addr
+    // }
+    // 
+    // /**
+    //  * Helper function to read user stake info from box storage
+    //  */
+    // public getUserStakeInfo(userAddress: Account): UserStakeInfo {
+    //   const userBox = this.stakers(userAddress)
+    // 
+    //   // Check if box exists
+    //   if (userBox.exists) {
+    //     const boxData = userBox.value.copy()
+    // 
+    //     return boxData
+    //   } else {
+    //     return new UserStakeInfo({
+    //       stakedAmount: new arc4.UintN64(0),
+    //       lastStakeTime: new arc4.UintN64(0),
+    //       totalRewardsEarned: new arc4.UintN64(0),
+    //     })
+    //   }
+    // }
+    // 
+    // /**
+    //  * Helper function to store user stake info in box storage
+    //  */
+    // public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
+    //   const userBox = this.stakers(userAddress)
+    //   if (userBox.exists) {
+    //     userBox.value = stakeInfo.copy()
+    //   }
+    // }
+    // 
+    // /**
+    //  * Initialize the contract with the ASA token ID and other parameters
+    //  */
+    // @abimethod()
+    // public initialize(
+    //   asset: Asset,
+    //   adminAddress: Account,
+    //   aprBasisPoints: uint64,
+    //   distributionPeriodSeconds: uint64,
+    //   minimumStake: uint64,
+    // ): void {
+    //   // Ensure this is only called during contract creation
+    //   assert(this.asset.value === Asset(), 'Already initialized')
+    // 
+    //   // Ensure only the creator can initialize
+    //   assert(Txn.sender === Global.creatorAddress, 'Only creator can initialize')
+    // 
+    //   // Store the initial parameters
+    //   this.asset.value = asset
+    //   this.adminAddress.value = adminAddress
+    //   this.totalStaked.value = 0
+    //   this.aprBasisPoints.value = aprBasisPoints
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    //   this.distributionPeriodSeconds.value = distributionPeriodSeconds
+    //   this.minimumStake.value = minimumStake
+    // }
+    // 
+    // /**
+    //  * Opt the contract into the ASA
+    //  */
+    // @abimethod()
+    // public optInToAsset(): void {
+    //   // Ensure only the creator or admin can opt in
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
+    // 
+    //   // Opt the contract into the ASA
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Global.currentApplicationAddress,
+    //       assetAmount: 0,
+    //       xferAsset: asset,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Stake tokens
+    //  * Requires a companion ASA transfer transaction
+    //  */
+    // @abimethod()
+    // public stake(): void {
+    //   // Ensure the contract has opted into the ASA
+    //   const asset = this.asset.value
+    //   assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const xferTxn = gtxn.AssetTransferTxn(0)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Get the stake amount from the transaction
+    //   const stakeAmount = xferTxn.assetAmount
+    //   const minimumStake = this.minimumStake.value
+    // 
+    //   // Get the current user stake info
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // If this is a new stake, ensure it meets minimum
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
+    //   stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value + stakeAmount
+    // }
+    // 
+    // /**
+    //  * Withdraw staked tokens
+    //  */
+    // @abimethod()
+    // public withdraw(amount: uint64): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has enough staked
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
+    //   assert(amount > 0, 'Withdrawal amount must be positive')
+    // 
+    //   // If withdrawing all, no need to check minimum remaining
+    //   // If partial withdrawal, ensure remaining stake meets minimum
+    //   if (amount < stakeInfo.stakedAmount.native) {
+    //     const remainingStake: uint64 = stakeInfo.stakedAmount.native - amount
+    //     const minimumStake = this.minimumStake.value
+    //     assert(remainingStake >= minimumStake, 'Remaining stake would be below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value - amount
+    // 
+    //   // Transfer tokens back to user
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Txn.sender,
+    //       assetAmount: amount,
+    //       xferAsset: asset,
+    //       fee: 1000,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Distribute rewards to all stakers
+    //  * Only the admin can call this
+    //  * Requires a companion ASA transfer transaction with the rewards
+    //  */
+    // @abimethod()
+    // public distributeRewards(): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction with rewards
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const asset = this.asset.value
+    //   const xferTxn = gtxn.AssetTransferTxn(1)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Check if enough time has passed since last distribution
+    //   const currentTime = Global.latestTimestamp
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    //   const periodSeconds = this.distributionPeriodSeconds.value
+    //   assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = currentTime
+    // 
+    //   // Note: Actual reward distribution happens via users claiming rewards
+    // }
+    // 
+    // /**
+    //  * Calculate rewards for a specific user
+    //  * This is a read-only method that doesn't modify state
+    //  */
+    // @abimethod({ readonly: true })
+    // public calculateUserRewards(userAddress: Account): uint64 {
+    //   const apr = this.aprBasisPoints.value
+    //   const totalStaked = this.totalStaked.value
+    // 
+    //   // If no total stake, return 0
+    //   if (totalStaked === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get the user's stake info
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    // 
+    //   // If user has no stake, return 0
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get user's stake amount and last stake time
+    //   const userStake = stakeInfo.stakedAmount
+    //   const lastStakeTime = stakeInfo.lastStakeTime
+    // 
+    //   // Get last distribution time
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    // 
+    //   // User must have been staked for at least 24 hours before the last distribution
+    //   if (lastStakeTime.native + 86400 > lastDistributionTime) {
+    //     return 0
+    //   }
+    // 
+    //   // Calculate daily reward based on APR
+    //   // Daily rate = APR / 365 / 10000 (to account for basis points)
+    //   // For a 5% APR (500 basis points), daily rate would be ~0.0137%
+    //   const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
+    //   const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
+    // 
+    //   return reward
+    // }
+    // 
+    // /**
+    //  * Claim rewards for the caller
+    //  * This implements the pull-based reward model
+    //  */
+    // @abimethod()
+    // public claimRewards(): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has a stake
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    // 
+    //   // Calculate rewards
+    //   const reward = this.calculateUserRewards(Txn.sender)
+    //   assert(reward > 0, 'No rewards to claim')
+    // 
+    //   // Update user's staked amount (auto-compound)
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
+    // 
+    //   // Update total rewards earned
+    //   stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global staked amount
+    //   this.totalStaked.value = this.totalStaked.value + reward
+    // }
+    // 
+    // /**
+    //  * Update the APR basis points
+    //  * Only the admin can call this
+    //  */
+    // @abimethod()
+    // public updateAPR(newAprBasisPoints: uint64): void {
+    //   // Ensure only admin can update APR
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update APR')
+    // 
+    //   // Update APR
+    //   this.aprBasisPoints.value = newAprBasisPoints
+    // }
+    // 
+    // /**
+    //  * Update the admin address
+    //  * Only the current admin can call this
+    //  */
+    // @abimethod()
+    // public updateAdmin(newAdminAddress: Account): void {
+    //   // Ensure only admin can update admin
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update admin')
+    // 
+    //   // Update admin address
+    //   this.adminAddress.value = newAdminAddress
+    // }
+    // 
+    // /**
+    //  * Get current staking statistics for a user
+    //  */
+    // @abimethod({ readonly: true })
+    // public getUserStats(userAddress: Account): Array<uint64> {
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    //   const result: uint64[] = [
+    //     stakeInfo.stakedAmount.native,
+    //     stakeInfo.lastStakeTime.native,
+    //     stakeInfo.totalRewardsEarned.native,
+    //     this.calculateUserRewards(userAddress),
+    //   ]
+    // 
+    //   return result
+    // }
+    // 
+    // /**
+    //  * Get contract global statistics
+    //  */
+    // @abimethod({ readonly: true })
+    // public getContractStats(): Array<uint64> {
+    //   const result: uint64[] = [
+    //     this.asset.value.id,
     concat
     // smart_contracts/staking/contract.algo.ts:49
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     uncover 4
     itob
-    // smart_contracts/staking/contract.algo.ts:46-52
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    // public adminAddress = GlobalState<Account>()
+    // smart_contracts/staking/contract.algo.ts:48-386
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
+    // 
+    // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+    // 
+    // /**
+    //  * Helper function to get a user's box name
+    //  * User address is used as the box name for simplicity
+    //  */
+    // public getUserBoxName(userAddress: Account): arc4.Address {
+    //   const addr = new arc4.Address(userAddress.bytes)
+    //   return addr
+    // }
+    // 
+    // /**
+    //  * Helper function to read user stake info from box storage
+    //  */
+    // public getUserStakeInfo(userAddress: Account): UserStakeInfo {
+    //   const userBox = this.stakers(userAddress)
+    // 
+    //   // Check if box exists
+    //   if (userBox.exists) {
+    //     const boxData = userBox.value.copy()
+    // 
+    //     return boxData
+    //   } else {
+    //     return new UserStakeInfo({
+    //       stakedAmount: new arc4.UintN64(0),
+    //       lastStakeTime: new arc4.UintN64(0),
+    //       totalRewardsEarned: new arc4.UintN64(0),
+    //     })
+    //   }
+    // }
+    // 
+    // /**
+    //  * Helper function to store user stake info in box storage
+    //  */
+    // public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
+    //   const userBox = this.stakers(userAddress)
+    //   if (userBox.exists) {
+    //     userBox.value = stakeInfo.copy()
+    //   }
+    // }
+    // 
+    // /**
+    //  * Initialize the contract with the ASA token ID and other parameters
+    //  */
+    // @abimethod()
+    // public initialize(
+    //   asset: Asset,
+    //   adminAddress: Account,
+    //   aprBasisPoints: uint64,
+    //   distributionPeriodSeconds: uint64,
+    //   minimumStake: uint64,
+    // ): void {
+    //   // Ensure this is only called during contract creation
+    //   assert(this.asset.value === Asset(), 'Already initialized')
+    // 
+    //   // Ensure only the creator can initialize
+    //   assert(Txn.sender === Global.creatorAddress, 'Only creator can initialize')
+    // 
+    //   // Store the initial parameters
+    //   this.asset.value = asset
+    //   this.adminAddress.value = adminAddress
+    //   this.totalStaked.value = 0
+    //   this.aprBasisPoints.value = aprBasisPoints
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    //   this.distributionPeriodSeconds.value = distributionPeriodSeconds
+    //   this.minimumStake.value = minimumStake
+    // }
+    // 
+    // /**
+    //  * Opt the contract into the ASA
+    //  */
+    // @abimethod()
+    // public optInToAsset(): void {
+    //   // Ensure only the creator or admin can opt in
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
+    // 
+    //   // Opt the contract into the ASA
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Global.currentApplicationAddress,
+    //       assetAmount: 0,
+    //       xferAsset: asset,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Stake tokens
+    //  * Requires a companion ASA transfer transaction
+    //  */
+    // @abimethod()
+    // public stake(): void {
+    //   // Ensure the contract has opted into the ASA
+    //   const asset = this.asset.value
+    //   assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const xferTxn = gtxn.AssetTransferTxn(0)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Get the stake amount from the transaction
+    //   const stakeAmount = xferTxn.assetAmount
+    //   const minimumStake = this.minimumStake.value
+    // 
+    //   // Get the current user stake info
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // If this is a new stake, ensure it meets minimum
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
+    //   stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value + stakeAmount
+    // }
+    // 
+    // /**
+    //  * Withdraw staked tokens
+    //  */
+    // @abimethod()
+    // public withdraw(amount: uint64): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has enough staked
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
+    //   assert(amount > 0, 'Withdrawal amount must be positive')
+    // 
+    //   // If withdrawing all, no need to check minimum remaining
+    //   // If partial withdrawal, ensure remaining stake meets minimum
+    //   if (amount < stakeInfo.stakedAmount.native) {
+    //     const remainingStake: uint64 = stakeInfo.stakedAmount.native - amount
+    //     const minimumStake = this.minimumStake.value
+    //     assert(remainingStake >= minimumStake, 'Remaining stake would be below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value - amount
+    // 
+    //   // Transfer tokens back to user
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Txn.sender,
+    //       assetAmount: amount,
+    //       xferAsset: asset,
+    //       fee: 1000,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Distribute rewards to all stakers
+    //  * Only the admin can call this
+    //  * Requires a companion ASA transfer transaction with the rewards
+    //  */
+    // @abimethod()
+    // public distributeRewards(): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction with rewards
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const asset = this.asset.value
+    //   const xferTxn = gtxn.AssetTransferTxn(1)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Check if enough time has passed since last distribution
+    //   const currentTime = Global.latestTimestamp
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    //   const periodSeconds = this.distributionPeriodSeconds.value
+    //   assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = currentTime
+    // 
+    //   // Note: Actual reward distribution happens via users claiming rewards
+    // }
+    // 
+    // /**
+    //  * Calculate rewards for a specific user
+    //  * This is a read-only method that doesn't modify state
+    //  */
+    // @abimethod({ readonly: true })
+    // public calculateUserRewards(userAddress: Account): uint64 {
+    //   const apr = this.aprBasisPoints.value
+    //   const totalStaked = this.totalStaked.value
+    // 
+    //   // If no total stake, return 0
+    //   if (totalStaked === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get the user's stake info
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    // 
+    //   // If user has no stake, return 0
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get user's stake amount and last stake time
+    //   const userStake = stakeInfo.stakedAmount
+    //   const lastStakeTime = stakeInfo.lastStakeTime
+    // 
+    //   // Get last distribution time
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    // 
+    //   // User must have been staked for at least 24 hours before the last distribution
+    //   if (lastStakeTime.native + 86400 > lastDistributionTime) {
+    //     return 0
+    //   }
+    // 
+    //   // Calculate daily reward based on APR
+    //   // Daily rate = APR / 365 / 10000 (to account for basis points)
+    //   // For a 5% APR (500 basis points), daily rate would be ~0.0137%
+    //   const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
+    //   const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
+    // 
+    //   return reward
+    // }
+    // 
+    // /**
+    //  * Claim rewards for the caller
+    //  * This implements the pull-based reward model
+    //  */
+    // @abimethod()
+    // public claimRewards(): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has a stake
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    // 
+    //   // Calculate rewards
+    //   const reward = this.calculateUserRewards(Txn.sender)
+    //   assert(reward > 0, 'No rewards to claim')
+    // 
+    //   // Update user's staked amount (auto-compound)
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
+    // 
+    //   // Update total rewards earned
+    //   stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global staked amount
+    //   this.totalStaked.value = this.totalStaked.value + reward
+    // }
+    // 
+    // /**
+    //  * Update the APR basis points
+    //  * Only the admin can call this
+    //  */
+    // @abimethod()
+    // public updateAPR(newAprBasisPoints: uint64): void {
+    //   // Ensure only admin can update APR
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update APR')
+    // 
+    //   // Update APR
+    //   this.aprBasisPoints.value = newAprBasisPoints
+    // }
+    // 
+    // /**
+    //  * Update the admin address
+    //  * Only the current admin can call this
+    //  */
+    // @abimethod()
+    // public updateAdmin(newAdminAddress: Account): void {
+    //   // Ensure only admin can update admin
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update admin')
+    // 
+    //   // Update admin address
+    //   this.adminAddress.value = newAdminAddress
+    // }
+    // 
+    // /**
+    //  * Get current staking statistics for a user
+    //  */
+    // @abimethod({ readonly: true })
+    // public getUserStats(userAddress: Account): Array<uint64> {
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    //   const result: uint64[] = [
+    //     stakeInfo.stakedAmount.native,
+    //     stakeInfo.lastStakeTime.native,
+    //     stakeInfo.totalRewardsEarned.native,
+    //     this.calculateUserRewards(userAddress),
+    //   ]
+    // 
+    //   return result
+    // }
+    // 
+    // /**
+    //  * Get contract global statistics
+    //  */
+    // @abimethod({ readonly: true })
+    // public getContractStats(): Array<uint64> {
+    //   const result: uint64[] = [
+    //     this.asset.value.id,
     concat
     // smart_contracts/staking/contract.algo.ts:50
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     uncover 3
     itob
-    // smart_contracts/staking/contract.algo.ts:46-52
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    // public adminAddress = GlobalState<Account>()
+    // smart_contracts/staking/contract.algo.ts:48-386
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
+    // 
+    // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+    // 
+    // /**
+    //  * Helper function to get a user's box name
+    //  * User address is used as the box name for simplicity
+    //  */
+    // public getUserBoxName(userAddress: Account): arc4.Address {
+    //   const addr = new arc4.Address(userAddress.bytes)
+    //   return addr
+    // }
+    // 
+    // /**
+    //  * Helper function to read user stake info from box storage
+    //  */
+    // public getUserStakeInfo(userAddress: Account): UserStakeInfo {
+    //   const userBox = this.stakers(userAddress)
+    // 
+    //   // Check if box exists
+    //   if (userBox.exists) {
+    //     const boxData = userBox.value.copy()
+    // 
+    //     return boxData
+    //   } else {
+    //     return new UserStakeInfo({
+    //       stakedAmount: new arc4.UintN64(0),
+    //       lastStakeTime: new arc4.UintN64(0),
+    //       totalRewardsEarned: new arc4.UintN64(0),
+    //     })
+    //   }
+    // }
+    // 
+    // /**
+    //  * Helper function to store user stake info in box storage
+    //  */
+    // public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
+    //   const userBox = this.stakers(userAddress)
+    //   if (userBox.exists) {
+    //     userBox.value = stakeInfo.copy()
+    //   }
+    // }
+    // 
+    // /**
+    //  * Initialize the contract with the ASA token ID and other parameters
+    //  */
+    // @abimethod()
+    // public initialize(
+    //   asset: Asset,
+    //   adminAddress: Account,
+    //   aprBasisPoints: uint64,
+    //   distributionPeriodSeconds: uint64,
+    //   minimumStake: uint64,
+    // ): void {
+    //   // Ensure this is only called during contract creation
+    //   assert(this.asset.value === Asset(), 'Already initialized')
+    // 
+    //   // Ensure only the creator can initialize
+    //   assert(Txn.sender === Global.creatorAddress, 'Only creator can initialize')
+    // 
+    //   // Store the initial parameters
+    //   this.asset.value = asset
+    //   this.adminAddress.value = adminAddress
+    //   this.totalStaked.value = 0
+    //   this.aprBasisPoints.value = aprBasisPoints
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    //   this.distributionPeriodSeconds.value = distributionPeriodSeconds
+    //   this.minimumStake.value = minimumStake
+    // }
+    // 
+    // /**
+    //  * Opt the contract into the ASA
+    //  */
+    // @abimethod()
+    // public optInToAsset(): void {
+    //   // Ensure only the creator or admin can opt in
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
+    // 
+    //   // Opt the contract into the ASA
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Global.currentApplicationAddress,
+    //       assetAmount: 0,
+    //       xferAsset: asset,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Stake tokens
+    //  * Requires a companion ASA transfer transaction
+    //  */
+    // @abimethod()
+    // public stake(): void {
+    //   // Ensure the contract has opted into the ASA
+    //   const asset = this.asset.value
+    //   assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const xferTxn = gtxn.AssetTransferTxn(0)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Get the stake amount from the transaction
+    //   const stakeAmount = xferTxn.assetAmount
+    //   const minimumStake = this.minimumStake.value
+    // 
+    //   // Get the current user stake info
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // If this is a new stake, ensure it meets minimum
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
+    //   stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value + stakeAmount
+    // }
+    // 
+    // /**
+    //  * Withdraw staked tokens
+    //  */
+    // @abimethod()
+    // public withdraw(amount: uint64): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has enough staked
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
+    //   assert(amount > 0, 'Withdrawal amount must be positive')
+    // 
+    //   // If withdrawing all, no need to check minimum remaining
+    //   // If partial withdrawal, ensure remaining stake meets minimum
+    //   if (amount < stakeInfo.stakedAmount.native) {
+    //     const remainingStake: uint64 = stakeInfo.stakedAmount.native - amount
+    //     const minimumStake = this.minimumStake.value
+    //     assert(remainingStake >= minimumStake, 'Remaining stake would be below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value - amount
+    // 
+    //   // Transfer tokens back to user
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Txn.sender,
+    //       assetAmount: amount,
+    //       xferAsset: asset,
+    //       fee: 1000,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Distribute rewards to all stakers
+    //  * Only the admin can call this
+    //  * Requires a companion ASA transfer transaction with the rewards
+    //  */
+    // @abimethod()
+    // public distributeRewards(): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction with rewards
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const asset = this.asset.value
+    //   const xferTxn = gtxn.AssetTransferTxn(1)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Check if enough time has passed since last distribution
+    //   const currentTime = Global.latestTimestamp
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    //   const periodSeconds = this.distributionPeriodSeconds.value
+    //   assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = currentTime
+    // 
+    //   // Note: Actual reward distribution happens via users claiming rewards
+    // }
+    // 
+    // /**
+    //  * Calculate rewards for a specific user
+    //  * This is a read-only method that doesn't modify state
+    //  */
+    // @abimethod({ readonly: true })
+    // public calculateUserRewards(userAddress: Account): uint64 {
+    //   const apr = this.aprBasisPoints.value
+    //   const totalStaked = this.totalStaked.value
+    // 
+    //   // If no total stake, return 0
+    //   if (totalStaked === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get the user's stake info
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    // 
+    //   // If user has no stake, return 0
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get user's stake amount and last stake time
+    //   const userStake = stakeInfo.stakedAmount
+    //   const lastStakeTime = stakeInfo.lastStakeTime
+    // 
+    //   // Get last distribution time
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    // 
+    //   // User must have been staked for at least 24 hours before the last distribution
+    //   if (lastStakeTime.native + 86400 > lastDistributionTime) {
+    //     return 0
+    //   }
+    // 
+    //   // Calculate daily reward based on APR
+    //   // Daily rate = APR / 365 / 10000 (to account for basis points)
+    //   // For a 5% APR (500 basis points), daily rate would be ~0.0137%
+    //   const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
+    //   const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
+    // 
+    //   return reward
+    // }
+    // 
+    // /**
+    //  * Claim rewards for the caller
+    //  * This implements the pull-based reward model
+    //  */
+    // @abimethod()
+    // public claimRewards(): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has a stake
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    // 
+    //   // Calculate rewards
+    //   const reward = this.calculateUserRewards(Txn.sender)
+    //   assert(reward > 0, 'No rewards to claim')
+    // 
+    //   // Update user's staked amount (auto-compound)
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
+    // 
+    //   // Update total rewards earned
+    //   stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global staked amount
+    //   this.totalStaked.value = this.totalStaked.value + reward
+    // }
+    // 
+    // /**
+    //  * Update the APR basis points
+    //  * Only the admin can call this
+    //  */
+    // @abimethod()
+    // public updateAPR(newAprBasisPoints: uint64): void {
+    //   // Ensure only admin can update APR
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update APR')
+    // 
+    //   // Update APR
+    //   this.aprBasisPoints.value = newAprBasisPoints
+    // }
+    // 
+    // /**
+    //  * Update the admin address
+    //  * Only the current admin can call this
+    //  */
+    // @abimethod()
+    // public updateAdmin(newAdminAddress: Account): void {
+    //   // Ensure only admin can update admin
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update admin')
+    // 
+    //   // Update admin address
+    //   this.adminAddress.value = newAdminAddress
+    // }
+    // 
+    // /**
+    //  * Get current staking statistics for a user
+    //  */
+    // @abimethod({ readonly: true })
+    // public getUserStats(userAddress: Account): Array<uint64> {
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    //   const result: uint64[] = [
+    //     stakeInfo.stakedAmount.native,
+    //     stakeInfo.lastStakeTime.native,
+    //     stakeInfo.totalRewardsEarned.native,
+    //     this.calculateUserRewards(userAddress),
+    //   ]
+    // 
+    //   return result
+    // }
+    // 
+    // /**
+    //  * Get contract global statistics
+    //  */
+    // @abimethod({ readonly: true })
+    // public getContractStats(): Array<uint64> {
+    //   const result: uint64[] = [
+    //     this.asset.value.id,
     concat
     // smart_contracts/staking/contract.algo.ts:51
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     uncover 2
     itob
-    // smart_contracts/staking/contract.algo.ts:46-52
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    // public adminAddress = GlobalState<Account>()
+    // smart_contracts/staking/contract.algo.ts:48-386
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
+    // 
+    // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+    // 
+    // /**
+    //  * Helper function to get a user's box name
+    //  * User address is used as the box name for simplicity
+    //  */
+    // public getUserBoxName(userAddress: Account): arc4.Address {
+    //   const addr = new arc4.Address(userAddress.bytes)
+    //   return addr
+    // }
+    // 
+    // /**
+    //  * Helper function to read user stake info from box storage
+    //  */
+    // public getUserStakeInfo(userAddress: Account): UserStakeInfo {
+    //   const userBox = this.stakers(userAddress)
+    // 
+    //   // Check if box exists
+    //   if (userBox.exists) {
+    //     const boxData = userBox.value.copy()
+    // 
+    //     return boxData
+    //   } else {
+    //     return new UserStakeInfo({
+    //       stakedAmount: new arc4.UintN64(0),
+    //       lastStakeTime: new arc4.UintN64(0),
+    //       totalRewardsEarned: new arc4.UintN64(0),
+    //     })
+    //   }
+    // }
+    // 
+    // /**
+    //  * Helper function to store user stake info in box storage
+    //  */
+    // public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
+    //   const userBox = this.stakers(userAddress)
+    //   if (userBox.exists) {
+    //     userBox.value = stakeInfo.copy()
+    //   }
+    // }
+    // 
+    // /**
+    //  * Initialize the contract with the ASA token ID and other parameters
+    //  */
+    // @abimethod()
+    // public initialize(
+    //   asset: Asset,
+    //   adminAddress: Account,
+    //   aprBasisPoints: uint64,
+    //   distributionPeriodSeconds: uint64,
+    //   minimumStake: uint64,
+    // ): void {
+    //   // Ensure this is only called during contract creation
+    //   assert(this.asset.value === Asset(), 'Already initialized')
+    // 
+    //   // Ensure only the creator can initialize
+    //   assert(Txn.sender === Global.creatorAddress, 'Only creator can initialize')
+    // 
+    //   // Store the initial parameters
+    //   this.asset.value = asset
+    //   this.adminAddress.value = adminAddress
+    //   this.totalStaked.value = 0
+    //   this.aprBasisPoints.value = aprBasisPoints
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    //   this.distributionPeriodSeconds.value = distributionPeriodSeconds
+    //   this.minimumStake.value = minimumStake
+    // }
+    // 
+    // /**
+    //  * Opt the contract into the ASA
+    //  */
+    // @abimethod()
+    // public optInToAsset(): void {
+    //   // Ensure only the creator or admin can opt in
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
+    // 
+    //   // Opt the contract into the ASA
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Global.currentApplicationAddress,
+    //       assetAmount: 0,
+    //       xferAsset: asset,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Stake tokens
+    //  * Requires a companion ASA transfer transaction
+    //  */
+    // @abimethod()
+    // public stake(): void {
+    //   // Ensure the contract has opted into the ASA
+    //   const asset = this.asset.value
+    //   assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const xferTxn = gtxn.AssetTransferTxn(0)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Get the stake amount from the transaction
+    //   const stakeAmount = xferTxn.assetAmount
+    //   const minimumStake = this.minimumStake.value
+    // 
+    //   // Get the current user stake info
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // If this is a new stake, ensure it meets minimum
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
+    //   stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value + stakeAmount
+    // }
+    // 
+    // /**
+    //  * Withdraw staked tokens
+    //  */
+    // @abimethod()
+    // public withdraw(amount: uint64): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has enough staked
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
+    //   assert(amount > 0, 'Withdrawal amount must be positive')
+    // 
+    //   // If withdrawing all, no need to check minimum remaining
+    //   // If partial withdrawal, ensure remaining stake meets minimum
+    //   if (amount < stakeInfo.stakedAmount.native) {
+    //     const remainingStake: uint64 = stakeInfo.stakedAmount.native - amount
+    //     const minimumStake = this.minimumStake.value
+    //     assert(remainingStake >= minimumStake, 'Remaining stake would be below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value - amount
+    // 
+    //   // Transfer tokens back to user
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Txn.sender,
+    //       assetAmount: amount,
+    //       xferAsset: asset,
+    //       fee: 1000,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Distribute rewards to all stakers
+    //  * Only the admin can call this
+    //  * Requires a companion ASA transfer transaction with the rewards
+    //  */
+    // @abimethod()
+    // public distributeRewards(): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction with rewards
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const asset = this.asset.value
+    //   const xferTxn = gtxn.AssetTransferTxn(1)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Check if enough time has passed since last distribution
+    //   const currentTime = Global.latestTimestamp
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    //   const periodSeconds = this.distributionPeriodSeconds.value
+    //   assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = currentTime
+    // 
+    //   // Note: Actual reward distribution happens via users claiming rewards
+    // }
+    // 
+    // /**
+    //  * Calculate rewards for a specific user
+    //  * This is a read-only method that doesn't modify state
+    //  */
+    // @abimethod({ readonly: true })
+    // public calculateUserRewards(userAddress: Account): uint64 {
+    //   const apr = this.aprBasisPoints.value
+    //   const totalStaked = this.totalStaked.value
+    // 
+    //   // If no total stake, return 0
+    //   if (totalStaked === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get the user's stake info
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    // 
+    //   // If user has no stake, return 0
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get user's stake amount and last stake time
+    //   const userStake = stakeInfo.stakedAmount
+    //   const lastStakeTime = stakeInfo.lastStakeTime
+    // 
+    //   // Get last distribution time
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    // 
+    //   // User must have been staked for at least 24 hours before the last distribution
+    //   if (lastStakeTime.native + 86400 > lastDistributionTime) {
+    //     return 0
+    //   }
+    // 
+    //   // Calculate daily reward based on APR
+    //   // Daily rate = APR / 365 / 10000 (to account for basis points)
+    //   // For a 5% APR (500 basis points), daily rate would be ~0.0137%
+    //   const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
+    //   const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
+    // 
+    //   return reward
+    // }
+    // 
+    // /**
+    //  * Claim rewards for the caller
+    //  * This implements the pull-based reward model
+    //  */
+    // @abimethod()
+    // public claimRewards(): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has a stake
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    // 
+    //   // Calculate rewards
+    //   const reward = this.calculateUserRewards(Txn.sender)
+    //   assert(reward > 0, 'No rewards to claim')
+    // 
+    //   // Update user's staked amount (auto-compound)
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
+    // 
+    //   // Update total rewards earned
+    //   stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global staked amount
+    //   this.totalStaked.value = this.totalStaked.value + reward
+    // }
+    // 
+    // /**
+    //  * Update the APR basis points
+    //  * Only the admin can call this
+    //  */
+    // @abimethod()
+    // public updateAPR(newAprBasisPoints: uint64): void {
+    //   // Ensure only admin can update APR
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update APR')
+    // 
+    //   // Update APR
+    //   this.aprBasisPoints.value = newAprBasisPoints
+    // }
+    // 
+    // /**
+    //  * Update the admin address
+    //  * Only the current admin can call this
+    //  */
+    // @abimethod()
+    // public updateAdmin(newAdminAddress: Account): void {
+    //   // Ensure only admin can update admin
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update admin')
+    // 
+    //   // Update admin address
+    //   this.adminAddress.value = newAdminAddress
+    // }
+    // 
+    // /**
+    //  * Get current staking statistics for a user
+    //  */
+    // @abimethod({ readonly: true })
+    // public getUserStats(userAddress: Account): Array<uint64> {
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    //   const result: uint64[] = [
+    //     stakeInfo.stakedAmount.native,
+    //     stakeInfo.lastStakeTime.native,
+    //     stakeInfo.totalRewardsEarned.native,
+    //     this.calculateUserRewards(userAddress),
+    //   ]
+    // 
+    //   return result
+    // }
+    // 
+    // /**
+    //  * Get contract global statistics
+    //  */
+    // @abimethod({ readonly: true })
+    // public getContractStats(): Array<uint64> {
+    //   const result: uint64[] = [
+    //     this.asset.value.id,
     concat
     // smart_contracts/staking/contract.algo.ts:52
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
     swap
     itob
-    // smart_contracts/staking/contract.algo.ts:46-52
-    // public assetId = GlobalState<uint64>({ initialValue: 0 })
-    // public adminAddress = GlobalState<Account>()
+    // smart_contracts/staking/contract.algo.ts:48-386
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
+    // 
+    // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+    // 
+    // /**
+    //  * Helper function to get a user's box name
+    //  * User address is used as the box name for simplicity
+    //  */
+    // public getUserBoxName(userAddress: Account): arc4.Address {
+    //   const addr = new arc4.Address(userAddress.bytes)
+    //   return addr
+    // }
+    // 
+    // /**
+    //  * Helper function to read user stake info from box storage
+    //  */
+    // public getUserStakeInfo(userAddress: Account): UserStakeInfo {
+    //   const userBox = this.stakers(userAddress)
+    // 
+    //   // Check if box exists
+    //   if (userBox.exists) {
+    //     const boxData = userBox.value.copy()
+    // 
+    //     return boxData
+    //   } else {
+    //     return new UserStakeInfo({
+    //       stakedAmount: new arc4.UintN64(0),
+    //       lastStakeTime: new arc4.UintN64(0),
+    //       totalRewardsEarned: new arc4.UintN64(0),
+    //     })
+    //   }
+    // }
+    // 
+    // /**
+    //  * Helper function to store user stake info in box storage
+    //  */
+    // public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
+    //   const userBox = this.stakers(userAddress)
+    //   if (userBox.exists) {
+    //     userBox.value = stakeInfo.copy()
+    //   }
+    // }
+    // 
+    // /**
+    //  * Initialize the contract with the ASA token ID and other parameters
+    //  */
+    // @abimethod()
+    // public initialize(
+    //   asset: Asset,
+    //   adminAddress: Account,
+    //   aprBasisPoints: uint64,
+    //   distributionPeriodSeconds: uint64,
+    //   minimumStake: uint64,
+    // ): void {
+    //   // Ensure this is only called during contract creation
+    //   assert(this.asset.value === Asset(), 'Already initialized')
+    // 
+    //   // Ensure only the creator can initialize
+    //   assert(Txn.sender === Global.creatorAddress, 'Only creator can initialize')
+    // 
+    //   // Store the initial parameters
+    //   this.asset.value = asset
+    //   this.adminAddress.value = adminAddress
+    //   this.totalStaked.value = 0
+    //   this.aprBasisPoints.value = aprBasisPoints
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    //   this.distributionPeriodSeconds.value = distributionPeriodSeconds
+    //   this.minimumStake.value = minimumStake
+    // }
+    // 
+    // /**
+    //  * Opt the contract into the ASA
+    //  */
+    // @abimethod()
+    // public optInToAsset(): void {
+    //   // Ensure only the creator or admin can opt in
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === Global.creatorAddress || Txn.sender === adminAddr, 'Only creator or admin can opt in')
+    // 
+    //   // Opt the contract into the ASA
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Global.currentApplicationAddress,
+    //       assetAmount: 0,
+    //       xferAsset: asset,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Stake tokens
+    //  * Requires a companion ASA transfer transaction
+    //  */
+    // @abimethod()
+    // public stake(): void {
+    //   // Ensure the contract has opted into the ASA
+    //   const asset = this.asset.value
+    //   assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const xferTxn = gtxn.AssetTransferTxn(0)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Get the stake amount from the transaction
+    //   const stakeAmount = xferTxn.assetAmount
+    //   const minimumStake = this.minimumStake.value
+    // 
+    //   // Get the current user stake info
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // If this is a new stake, ensure it meets minimum
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
+    //   stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value + stakeAmount
+    // }
+    // 
+    // /**
+    //  * Withdraw staked tokens
+    //  */
+    // @abimethod()
+    // public withdraw(amount: uint64): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has enough staked
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
+    //   assert(amount > 0, 'Withdrawal amount must be positive')
+    // 
+    //   // If withdrawing all, no need to check minimum remaining
+    //   // If partial withdrawal, ensure remaining stake meets minimum
+    //   if (amount < stakeInfo.stakedAmount.native) {
+    //     const remainingStake: uint64 = stakeInfo.stakedAmount.native - amount
+    //     const minimumStake = this.minimumStake.value
+    //     assert(remainingStake >= minimumStake, 'Remaining stake would be below minimum')
+    //   }
+    // 
+    //   // Update stake info
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global state
+    //   this.totalStaked.value = this.totalStaked.value - amount
+    // 
+    //   // Transfer tokens back to user
+    //   const asset = this.asset.value
+    //   itxn
+    //     .assetTransfer({
+    //       assetReceiver: Txn.sender,
+    //       assetAmount: amount,
+    //       xferAsset: asset,
+    //       fee: 1000,
+    //     })
+    //     .submit()
+    // }
+    // 
+    // /**
+    //  * Distribute rewards to all stakers
+    //  * Only the admin can call this
+    //  * Requires a companion ASA transfer transaction with the rewards
+    //  */
+    // @abimethod()
+    // public distributeRewards(): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure this call has a companion ASA transfer transaction with rewards
+    //   assert(Global.groupSize === 2, 'Expected 2 txns in group')
+    // 
+    //   // Get the ASA transfer details
+    //   const asset = this.asset.value
+    //   const xferTxn = gtxn.AssetTransferTxn(1)
+    //   assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    //   assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
+    //   assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
+    //   assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
+    // 
+    //   // Check if enough time has passed since last distribution
+    //   const currentTime = Global.latestTimestamp
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    //   const periodSeconds = this.distributionPeriodSeconds.value
+    //   assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = currentTime
+    // 
+    //   // Note: Actual reward distribution happens via users claiming rewards
+    // }
+    // 
+    // /**
+    //  * Calculate rewards for a specific user
+    //  * This is a read-only method that doesn't modify state
+    //  */
+    // @abimethod({ readonly: true })
+    // public calculateUserRewards(userAddress: Account): uint64 {
+    //   const apr = this.aprBasisPoints.value
+    //   const totalStaked = this.totalStaked.value
+    // 
+    //   // If no total stake, return 0
+    //   if (totalStaked === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get the user's stake info
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    // 
+    //   // If user has no stake, return 0
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Get user's stake amount and last stake time
+    //   const userStake = stakeInfo.stakedAmount
+    //   const lastStakeTime = stakeInfo.lastStakeTime
+    // 
+    //   // Get last distribution time
+    //   const lastDistributionTime = this.lastDistributionTime.value
+    // 
+    //   // User must have been staked for at least 24 hours before the last distribution
+    //   if (lastStakeTime.native + 86400 > lastDistributionTime) {
+    //     return 0
+    //   }
+    // 
+    //   // Calculate daily reward based on APR
+    //   // Daily rate = APR / 365 / 10000 (to account for basis points)
+    //   // For a 5% APR (500 basis points), daily rate would be ~0.0137%
+    //   const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
+    //   const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
+    // 
+    //   return reward
+    // }
+    // 
+    // /**
+    //  * Claim rewards for the caller
+    //  * This implements the pull-based reward model
+    //  */
+    // @abimethod()
+    // public claimRewards(): void {
+    //   const senderAddress = Txn.sender
+    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // 
+    //   // Ensure user has a stake
+    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    // 
+    //   // Calculate rewards
+    //   const reward = this.calculateUserRewards(Txn.sender)
+    //   assert(reward > 0, 'No rewards to claim')
+    // 
+    //   // Update user's staked amount (auto-compound)
+    //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
+    // 
+    //   // Update total rewards earned
+    //   stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
+    // 
+    //   // Store updated stake info
+    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    // 
+    //   // Update global staked amount
+    //   this.totalStaked.value = this.totalStaked.value + reward
+    // }
+    // 
+    // /**
+    //  * Update the APR basis points
+    //  * Only the admin can call this
+    //  */
+    // @abimethod()
+    // public updateAPR(newAprBasisPoints: uint64): void {
+    //   // Ensure only admin can update APR
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update APR')
+    // 
+    //   // Update APR
+    //   this.aprBasisPoints.value = newAprBasisPoints
+    // }
+    // 
+    // /**
+    //  * Update the admin address
+    //  * Only the current admin can call this
+    //  */
+    // @abimethod()
+    // public updateAdmin(newAdminAddress: Account): void {
+    //   // Ensure only admin can update admin
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can update admin')
+    // 
+    //   // Update admin address
+    //   this.adminAddress.value = newAdminAddress
+    // }
+    // 
+    // /**
+    //  * Get current staking statistics for a user
+    //  */
+    // @abimethod({ readonly: true })
+    // public getUserStats(userAddress: Account): Array<uint64> {
+    //   const userAddr = userAddress
+    //   const stakeInfo = this.getUserStakeInfo(userAddr)
+    //   const result: uint64[] = [
+    //     stakeInfo.stakedAmount.native,
+    //     stakeInfo.lastStakeTime.native,
+    //     stakeInfo.totalRewardsEarned.native,
+    //     this.calculateUserRewards(userAddress),
+    //   ]
+    // 
+    //   return result
+    // }
+    // 
+    // /**
+    //  * Get contract global statistics
+    //  */
+    // @abimethod({ readonly: true })
+    // public getContractStats(): Array<uint64> {
+    //   const result: uint64[] = [
+    //     this.asset.value.id,
     concat
     dup
     len
@@ -1371,25 +3032,25 @@ getContractStats:
     extract 6 2
     swap
     concat
-    // smart_contracts/staking/contract.algo.ts:396
+    // smart_contracts/staking/contract.algo.ts:394
     // return result
     retsub
 
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.deleteUserBox(userAddress: bytes) -> void:
 deleteUserBox:
-    // smart_contracts/staking/contract.algo.ts:403-404
+    // smart_contracts/staking/contract.algo.ts:401-402
     // @abimethod()
     // public deleteUserBox(userAddress: Account): void {
     proto 1 0
     intc_0 // 0
     // smart_contracts/staking/contract.algo.ts:47
-    // public adminAddress = GlobalState<Account>()
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     dup
     bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:409
+    // smart_contracts/staking/contract.algo.ts:407
     // assert(Txn.sender === boxOwner || Txn.sender === adminAddr, 'Only box owner or admin can delete box')
     txn Sender
     frame_dig -1
@@ -1404,14 +3065,14 @@ deleteUserBox_bool_true@2:
     intc_1 // 1
 
 deleteUserBox_bool_merge@4:
-    // smart_contracts/staking/contract.algo.ts:409
+    // smart_contracts/staking/contract.algo.ts:407
     // assert(Txn.sender === boxOwner || Txn.sender === adminAddr, 'Only box owner or admin can delete box')
     assert // Only box owner or admin can delete box
-    // smart_contracts/staking/contract.algo.ts:413
+    // smart_contracts/staking/contract.algo.ts:411
     // const stakeInfo = this.getUserStakeInfo(userAddr)
     frame_dig -1
     callsub getUserStakeInfo
-    // smart_contracts/staking/contract.algo.ts:414
+    // smart_contracts/staking/contract.algo.ts:412
     // assert(stakeInfo.stakedAmount.native === 0, 'User still has active stake')
     intc_0 // 0
     extract_uint64
@@ -1420,22 +3081,22 @@ deleteUserBox_bool_merge@4:
     // smart_contracts/staking/contract.algo.ts:54
     // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
     bytec 8 // "stakers"
-    // smart_contracts/staking/contract.algo.ts:417
+    // smart_contracts/staking/contract.algo.ts:415
     // const userBox = this.stakers(userAddress)
     frame_dig -1
     // smart_contracts/staking/contract.algo.ts:54
     // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
     concat
-    // smart_contracts/staking/contract.algo.ts:417
+    // smart_contracts/staking/contract.algo.ts:415
     // const userBox = this.stakers(userAddress)
     dup
     frame_bury 0
-    // smart_contracts/staking/contract.algo.ts:418
+    // smart_contracts/staking/contract.algo.ts:416
     // if (userBox.exists) {
     box_len
     bury 1
     bz deleteUserBox_after_if_else@6
-    // smart_contracts/staking/contract.algo.ts:419
+    // smart_contracts/staking/contract.algo.ts:417
     // userBox.delete()
     frame_dig 0
     box_del
