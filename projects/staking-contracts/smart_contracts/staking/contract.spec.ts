@@ -92,5 +92,10 @@ describe('Staking contract', () => {
     ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
       contract.stake()
     })
+
+    expect(contract.totalStaked.value).toEqual(1000000)
+    expect(contract.stakers.length).toEqual(1)
+    expect(contract.stakers(sender).exists).toEqual(true)
+    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(1000000n)
   })
 })

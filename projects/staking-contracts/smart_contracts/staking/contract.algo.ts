@@ -86,10 +86,7 @@ export class ASAStakingContract extends Contract {
    * Helper function to store user stake info in box storage
    */
   public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
-    const userBox = this.stakers(userAddress)
-    if (userBox.exists) {
-      userBox.value = stakeInfo.copy()
-    }
+    this.stakers(userAddress).value = stakeInfo.copy()
   }
 
   /**
