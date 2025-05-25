@@ -1,7 +1,8 @@
 import { TestExecutionContext } from '@algorandfoundation/algorand-typescript-testing'
 import { describe, expect, it, beforeEach } from 'vitest'
-import { ASAStakingContract } from './contract.algo'
+import { ASAStakingContract, UserStakeInfo } from './contract.algo'
 import { Bytes } from '@algorandfoundation/algorand-typescript'
+import { UintN64 } from '@algorandfoundation/algorand-typescript/arc4'
 
 describe('Staking contract', () => {
   const ctx = new TestExecutionContext()
@@ -241,5 +242,208 @@ describe('Staking contract', () => {
     expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(1000000n)
     expect(contract.stakers(sender2).exists).toEqual(true)
     expect(contract.stakers(sender2).value.stakedAmount.native.valueOf()).toEqual(1000000n)
+  })
+
+  it("Cannot withdraw if not staked", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.stakers(sender).value = new UserStakeInfo({ stakedAmount: new UintN64(0), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      expect(() => contract.withdraw(1000000)).toThrow()
+    })
+  })
+
+  it("Cannot withdraw if less than minimum remaining", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 1000
+    contract.stakers(sender).value = new UserStakeInfo({ stakedAmount: new UintN64(1000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      expect(() => contract.withdraw(500)).toThrow()
+    })
+  })
+
+  it("Cannot withdraw if more than staked", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 2000
+    contract.stakers(sender).value = new UserStakeInfo({ stakedAmount: new UintN64(2000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      expect(() => contract.withdraw(3000)).toThrow()
+    })
+  })
+
+  it("Can withdraw stake", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 1000
+    contract.stakers(sender).value = new UserStakeInfo({ stakedAmount: new UintN64(1000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      contract.withdraw(1000)
+    })
+
+    expect(contract.totalStaked.value).toEqual(0)
+    expect(contract.stakers(sender).exists).toEqual(true)
+    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(0n)
+
+    const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
+    expect(assetTransferTxn.assetAmount).toEqual(1000)
+    expect(assetTransferTxn.assetReceiver).toEqual(sender)
+    expect(assetTransferTxn.assetSender).toEqual(app.address)
+    expect(assetTransferTxn.xferAsset).toEqual(asset)
+  })
+
+  it("Can withdraw partial stake", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 10000
+    contract.stakers(sender).value = new UserStakeInfo({ stakedAmount: new UintN64(10000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      contract.withdraw(1000)
+    })
+
+    expect(contract.totalStaked.value).toEqual(9000)
+    expect(contract.stakers(sender).exists).toEqual(true)
+    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(9000n)
+
+    const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
+    expect(assetTransferTxn.assetAmount).toEqual(1000)
+    expect(assetTransferTxn.assetReceiver).toEqual(sender)
+    expect(assetTransferTxn.assetSender).toEqual(app.address)
+    expect(assetTransferTxn.xferAsset).toEqual(asset)
+  })
+
+  it("Can withdraw multiple times stake", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 10000
+    contract.stakers(sender).value = new UserStakeInfo({ stakedAmount: new UintN64(10000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      contract.withdraw(1000)
+    })
+
+    expect(contract.totalStaked.value).toEqual(9000)
+    expect(contract.stakers(sender).exists).toEqual(true)
+    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(9000n)
+
+    const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
+    expect(assetTransferTxn.assetAmount).toEqual(1000)
+    expect(assetTransferTxn.assetReceiver).toEqual(sender)
+    expect(assetTransferTxn.assetSender).toEqual(app.address)
+    expect(assetTransferTxn.xferAsset).toEqual(asset)
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      contract.withdraw(9000)
+    })
+
+    expect(contract.totalStaked.value).toEqual(0)
+    expect(contract.stakers(sender).exists).toEqual(true)
+    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(0n)
+
+    const assetTransferTxn2 = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
+    expect(assetTransferTxn2.assetAmount).toEqual(9000)
+    expect(assetTransferTxn2.assetReceiver).toEqual(sender)
+    expect(assetTransferTxn2.assetSender).toEqual(app.address)
+    expect(assetTransferTxn2.xferAsset).toEqual(asset)
+  })
+
+  it("allows multiple withdrawals from different stakers", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const staker1 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+    const staker2 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 10000
+    contract.stakers(staker1).value = new UserStakeInfo({ stakedAmount: new UintN64(5000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+    contract.stakers(staker2).value = new UserStakeInfo({ stakedAmount: new UintN64(5000), lastStakeTime: new UintN64(0), totalRewardsEarned: new UintN64(0) })
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: staker1, appId: app }) ], 0).execute(() => {
+      contract.withdraw(1000)
+    })
+
+    expect(contract.totalStaked.value).toEqual(9000)
+    expect(contract.stakers(staker1).exists).toEqual(true)
+    expect(contract.stakers(staker1).value.stakedAmount.native.valueOf()).toEqual(4000n)
+
+    const assetTransferTxn1 = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
+    expect(assetTransferTxn1.assetAmount).toEqual(1000)
+    expect(assetTransferTxn1.assetReceiver).toEqual(staker1)
+    expect(assetTransferTxn1.assetSender).toEqual(app.address)
+    expect(assetTransferTxn1.xferAsset).toEqual(asset)
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: staker2, appId: app }) ], 0).execute(() => {
+      contract.withdraw(1000)
+    })
+
+    expect(contract.totalStaked.value).toEqual(8000)
+    expect(contract.stakers(staker2).exists).toEqual(true)
+    expect(contract.stakers(staker2).value.stakedAmount.native.valueOf()).toEqual(4000n)
+
+    const assetTransferTxn2 = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
+    expect(assetTransferTxn2.assetAmount).toEqual(1000)
+    expect(assetTransferTxn2.assetReceiver).toEqual(staker2)
+    expect(assetTransferTxn2.assetSender).toEqual(app.address)
+    expect(assetTransferTxn2.xferAsset).toEqual(asset)
+
   })
 })

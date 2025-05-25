@@ -20,7 +20,7 @@ import {
 /**
  * User stake information stored in box storage
  */
-class UserStakeInfo extends arc4.Struct<{
+export class UserStakeInfo extends arc4.Struct<{
   // Amount of tokens staked by this user
   stakedAmount: arc4.UintN64
   // Timestamp when user last staked or added to stake
