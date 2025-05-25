@@ -27,21 +27,23 @@ export class UserStakeInfo extends arc4.Struct<{
   lastStakeTime: arc4.UintN64
   // Cumulative rewards earned
   totalRewardsEarned: arc4.UintN64
+  // Last distribution period when user claimed rewards
+  lastClaimedPeriod: arc4.UintN64
 }> {}
 
 /**
- * ASA Staking Contract for Algorand
+ * ASA Staking Contract for Algorand with Auto-Compounding
  *
  * This contract allows users to:
  * - Stake an ASA token
- * - Earn daily rewards that compound automatically
+ * - Earn rewards that compound automatically when claimed
  * - Add to their stake at any time
  * - Withdraw part or all of their stake at any time
- * - Rewards paid out if staked for at least 24 hours before distribution
+ * - Rewards are calculated based on APR and distributed from a reward pool
  *
  * This implementation uses box storage to store user staking information
  */
-@contract({ stateTotals: { globalBytes: 7 } })
+@contract({ stateTotals: { globalBytes: 8 } })
 export class ASAStakingContract extends Contract {
   public asset = GlobalState<Asset>({ initialValue: Asset() })
   public adminAddress = GlobalState<Account>({ initialValue: Account()})
@@ -50,17 +52,9 @@ export class ASAStakingContract extends Contract {
   public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
   public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
   public minimumStake = GlobalState<uint64>({ initialValue: 0 })
+  public rewardPool = GlobalState<uint64>({ initialValue: 0 })
 
   public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
-
-  /**
-   * Helper function to get a user's box name
-   * User address is used as the box name for simplicity
-   */
-  public getUserBoxName(userAddress: Account): arc4.Address {
-    const addr = new arc4.Address(userAddress.bytes)
-    return addr
-  }
 
   /**
    * Helper function to read user stake info from box storage
@@ -68,16 +62,14 @@ export class ASAStakingContract extends Contract {
   public getUserStakeInfo(userAddress: Account): UserStakeInfo {
     const userBox = this.stakers(userAddress)
 
-    // Check if box exists
     if (userBox.exists) {
-      const boxData = userBox.value.copy()
-
-      return boxData
+      return userBox.value.copy()
     } else {
       return new UserStakeInfo({
         stakedAmount: new arc4.UintN64(0),
         lastStakeTime: new arc4.UintN64(0),
         totalRewardsEarned: new arc4.UintN64(0),
+        lastClaimedPeriod: new arc4.UintN64(0),
       })
     }
   }
@@ -87,6 +79,15 @@ export class ASAStakingContract extends Contract {
    */
   public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
     this.stakers(userAddress).value = stakeInfo.copy()
+  }
+
+  /**
+   * Calculate the current distribution period
+   */
+  public getCurrentPeriod(): uint64 {
+    const periodSeconds = this.distributionPeriodSeconds.value
+    if (periodSeconds === 0) return 0
+    return Global.latestTimestamp / periodSeconds
   }
 
   /**
@@ -114,6 +115,7 @@ export class ASAStakingContract extends Contract {
     this.lastDistributionTime.value = Global.latestTimestamp
     this.distributionPeriodSeconds.value = distributionPeriodSeconds
     this.minimumStake.value = minimumStake
+    this.rewardPool.value = 0
   }
 
   /**
@@ -144,14 +146,14 @@ export class ASAStakingContract extends Contract {
   public stake(): void {
     // Ensure the contract has opted into the ASA
     const asset = this.asset.value
-    assert(this.asset.value !== Asset(), 'Contract not opted in to ASA')
+    assert(this.asset.value !== Asset(), 'Contract not initialized')
 
     // Ensure this call has a companion ASA transfer transaction
     assert(Global.groupSize === 2, 'Expected 2 txns in group')
 
     // Get the ASA transfer details
     const xferTxn = gtxn.AssetTransferTxn(0)
-    assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 0 must be asset transfer')
     assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
     assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
     assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
@@ -167,6 +169,8 @@ export class ASAStakingContract extends Contract {
     // If this is a new stake, ensure it meets minimum
     if (stakeInfo.stakedAmount.native === 0) {
       assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
+      // Set the initial claim period to current period
+      stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     }
 
     // Update stake info
@@ -223,56 +227,51 @@ export class ASAStakingContract extends Contract {
   }
 
   /**
-   * Distribute rewards to all stakers
+   * Add rewards to the reward pool
    * Only the admin can call this
    * Requires a companion ASA transfer transaction with the rewards
    */
   @abimethod()
-  public distributeRewards(): void {
-    // Ensure only admin can distribute rewards
+  public addRewards(): void {
+    // Ensure only admin can add rewards
     const adminAddr = this.adminAddress.value
-    assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    assert(Txn.sender === adminAddr, 'Only admin can add rewards')
 
     // Ensure this call has a companion ASA transfer transaction with rewards
     assert(Global.groupSize === 2, 'Expected 2 txns in group')
 
     // Get the ASA transfer details
     const asset = this.asset.value
-    const xferTxn = gtxn.AssetTransferTxn(1)
-    assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 1 must be asset transfer')
+    const xferTxn = gtxn.AssetTransferTxn(0)
+    assert(xferTxn.type === TransactionType.AssetTransfer, 'Transaction 0 must be asset transfer')
     assert(xferTxn.assetReceiver === Global.currentApplicationAddress, 'Asset transfer must be to contract')
     assert(xferTxn.assetAmount > 0, 'Must provide non-zero rewards')
     assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
 
-    // Check if enough time has passed since last distribution
-    const currentTime = Global.latestTimestamp
-    const lastDistributionTime = this.lastDistributionTime.value
-    const periodSeconds = this.distributionPeriodSeconds.value
-    assert(currentTime >= lastDistributionTime + periodSeconds, 'Distribution period has not passed')
+    // Add rewards to the pool
+    this.rewardPool.value = this.rewardPool.value + xferTxn.assetAmount
 
     // Update last distribution time
-    this.lastDistributionTime.value = currentTime
-
-    // Note: Actual reward distribution happens via users claiming rewards
+    this.lastDistributionTime.value = Global.latestTimestamp
   }
 
   /**
-   * Calculate rewards for a specific user
-   * This is a read-only method that doesn't modify state
+   * Calculate rewards for a specific user for a given period
+   * This calculates rewards per distribution period
    */
   @abimethod({ readonly: true })
-  public calculateUserRewards(userAddress: Account): uint64 {
+  public calculateUserRewardsForPeriod(userAddress: Account): uint64 {
     const apr = this.aprBasisPoints.value
     const totalStaked = this.totalStaked.value
+    const periodSeconds = this.distributionPeriodSeconds.value
 
-    // If no total stake, return 0
-    if (totalStaked === 0) {
+    // If no total stake or no period defined, return 0
+    if (totalStaked === 0 || periodSeconds === 0) {
       return 0
     }
 
     // Get the user's stake info
-    const userAddr = userAddress
-    const stakeInfo = this.getUserStakeInfo(userAddr)
+    const stakeInfo = this.getUserStakeInfo(userAddress)
 
     // If user has no stake, return 0
     if (stakeInfo.stakedAmount.native === 0) {
@@ -280,29 +279,59 @@ export class ASAStakingContract extends Contract {
     }
 
     // Get user's stake amount and last stake time
-    const userStake = stakeInfo.stakedAmount
-    const lastStakeTime = stakeInfo.lastStakeTime
+    const userStake = stakeInfo.stakedAmount.native
+    const lastStakeTime = stakeInfo.lastStakeTime.native
 
-    // Get last distribution time
-    const lastDistributionTime = this.lastDistributionTime.value
-
-    // User must have been staked for at least 24 hours before the last distribution
-    if (lastStakeTime.native + 86400 > lastDistributionTime) {
+    // Check if user has been staked for the minimum period
+    const minimumStakeTime: uint64 = 86400 // 24 hours in seconds
+    if (Global.latestTimestamp < lastStakeTime + minimumStakeTime) {
       return 0
     }
 
-    // Calculate daily reward based on APR
-    // Daily rate = APR / 365 / 10000 (to account for basis points)
-    // For a 5% APR (500 basis points), daily rate would be ~0.0137%
-    const dailyRateBasisPoints: uint64 = ((apr * 100) / 365) * 10000
-    const reward: uint64 = (userStake.native * dailyRateBasisPoints) / 10000
+    // Calculate reward rate for the period
+    // APR is in basis points (e.g., 500 = 5%)
+    // Convert APR to period rate: (APR / 10000) * (periodSeconds / 31536000)
+    // where 31536000 is seconds in a year
+    const yearInSeconds: uint64 = 31536000
+    const periodRateNumerator: uint64 = apr * periodSeconds
+    const periodRateDenominator: uint64 = 10000 * yearInSeconds
+
+    // Calculate reward: userStake * periodRate
+    const reward: uint64 = (userStake * periodRateNumerator) / periodRateDenominator
 
     return reward
   }
 
   /**
-   * Claim rewards for the caller
-   * This implements the pull-based reward model
+   * Calculate pending rewards for a user since their last claim
+   */
+  @abimethod({ readonly: true })
+  public calculatePendingRewards(userAddress: Account): uint64 {
+    const stakeInfo = this.getUserStakeInfo(userAddress)
+    
+    if (stakeInfo.stakedAmount.native === 0) {
+      return 0
+    }
+
+    const currentPeriod = this.getCurrentPeriod()
+    const lastClaimedPeriod = stakeInfo.lastClaimedPeriod.native
+    
+    // Calculate periods since last claim
+    const periodsSinceLastClaim: uint64 = currentPeriod > lastClaimedPeriod ? currentPeriod - lastClaimedPeriod : 0
+    
+    if (periodsSinceLastClaim === 0) {
+      return 0
+    }
+
+    // Calculate reward per period
+    const rewardPerPeriod = this.calculateUserRewardsForPeriod(userAddress)
+    
+    return rewardPerPeriod * periodsSinceLastClaim
+  }
+
+  /**
+   * Claim rewards for the caller with auto-compounding
+   * This implements the pull-based reward model with automatic compounding
    */
   @abimethod()
   public claimRewards(): void {
@@ -312,21 +341,28 @@ export class ASAStakingContract extends Contract {
     // Ensure user has a stake
     assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
 
-    // Calculate rewards
-    const reward = this.calculateUserRewards(Txn.sender)
-    assert(reward > 0, 'No rewards to claim')
+    // Calculate pending rewards
+    const pendingRewards = this.calculatePendingRewards(senderAddress)
+    assert(pendingRewards > 0, 'No rewards to claim')
 
-    // Update user's staked amount (auto-compound)
-    stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + reward)
+    // Ensure reward pool has sufficient funds
+    assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+
+    // Auto-compound: Add rewards to staked amount
+    stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
 
     // Update total rewards earned
-    stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + reward)
+    stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
+
+    // Update last claimed period to current period
+    stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
 
     // Store updated stake info
     this.storeUserStakeInfo(senderAddress, stakeInfo)
 
-    // Update global staked amount
-    this.totalStaked.value = this.totalStaked.value + reward
+    // Update global state
+    this.totalStaked.value = this.totalStaked.value + pendingRewards
+    this.rewardPool.value = this.rewardPool.value - pendingRewards
   }
 
   /**
@@ -362,13 +398,15 @@ export class ASAStakingContract extends Contract {
    */
   @abimethod({ readonly: true })
   public getUserStats(userAddress: Account): Array<uint64> {
-    const userAddr = userAddress
-    const stakeInfo = this.getUserStakeInfo(userAddr)
+    const stakeInfo = this.getUserStakeInfo(userAddress)
+    const pendingRewards = this.calculatePendingRewards(userAddress)
+    
     const result: uint64[] = [
       stakeInfo.stakedAmount.native,
       stakeInfo.lastStakeTime.native,
       stakeInfo.totalRewardsEarned.native,
-      this.calculateUserRewards(userAddress),
+      pendingRewards,
+      stakeInfo.lastClaimedPeriod.native,
     ]
 
     return result
@@ -386,9 +424,38 @@ export class ASAStakingContract extends Contract {
       this.lastDistributionTime.value,
       this.distributionPeriodSeconds.value,
       this.minimumStake.value,
+      this.rewardPool.value,
+      this.getCurrentPeriod(),
     ]
 
     return result
+  }
+
+  /**
+   * Emergency withdraw rewards from pool (admin only)
+   */
+  @abimethod()
+  public emergencyWithdrawRewards(amount: uint64): void {
+    // Ensure only admin can withdraw
+    const adminAddr = this.adminAddress.value
+    assert(Txn.sender === adminAddr, 'Only admin can emergency withdraw')
+
+    // Ensure sufficient funds in reward pool
+    assert(this.rewardPool.value >= amount, 'Insufficient reward pool')
+
+    // Update reward pool
+    this.rewardPool.value = this.rewardPool.value - amount
+
+    // Transfer tokens to admin
+    const asset = this.asset.value
+    itxn
+      .assetTransfer({
+        assetReceiver: adminAddr,
+        assetAmount: amount,
+        xferAsset: asset,
+        fee: 1000,
+      })
+      .submit()
   }
 
   /**
@@ -404,8 +471,7 @@ export class ASAStakingContract extends Contract {
     assert(Txn.sender === boxOwner || Txn.sender === adminAddr, 'Only box owner or admin can delete box')
 
     // Ensure user has no active stake
-    const userAddr = userAddress
-    const stakeInfo = this.getUserStakeInfo(userAddr)
+    const stakeInfo = this.getUserStakeInfo(userAddress)
     assert(stakeInfo.stakedAmount.native === 0, 'User still has active stake')
 
     // Delete the box
