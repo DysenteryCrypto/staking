@@ -4,7 +4,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 4 8
-    bytecblock "rewardPool" "asset" "totalStaked" "adminAddress" 0x151f7c75 "aprBasisPoints" "distributionPeriodSeconds" "minimumStake" "lastDistributionTime" "stakers"
+    bytecblock "rewardPool" "asset" "adminAddress" "totalStaked" 0x151f7c75 "aprBasisPoints" "lastDistributionTime" "distributionPeriodSeconds" "minimumStake" "stakers"
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/staking/contract.algo.ts:48
@@ -14,12 +14,12 @@ main:
     app_global_put
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     global ZeroAddress
     app_global_put
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     intc_0 // 0
     app_global_put
     // smart_contracts/staking/contract.algo.ts:51
@@ -29,17 +29,17 @@ main:
     app_global_put
     // smart_contracts/staking/contract.algo.ts:52
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
-    bytec 8 // "lastDistributionTime"
+    bytec 6 // "lastDistributionTime"
     intc_0 // 0
     app_global_put
     // smart_contracts/staking/contract.algo.ts:53
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
-    bytec 6 // "distributionPeriodSeconds"
+    bytec 7 // "distributionPeriodSeconds"
     intc_0 // 0
     app_global_put
     // smart_contracts/staking/contract.algo.ts:54
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
-    bytec 7 // "minimumStake"
+    bytec 8 // "minimumStake"
     intc_0 // 0
     app_global_put
     // smart_contracts/staking/contract.algo.ts:55
@@ -53,20 +53,20 @@ main_after_if_else@2:
     // @contract({ stateTotals: { globalBytes: 8 } })
     // export class ASAStakingContract extends Contract {
     txn NumAppArgs
-    bz main_bare_routing@24
-    pushbytess 0x36dd05b4 0xa01a5ddc 0x0e93fde6 0x667c5d30 0x9ffd3e53 0x0890bd58 0x21f1ddff 0xb3b70146 0x0bd8cf60 0x6904ac5a 0xa5ae6bd1 0x1e6612bd 0x82ab1ec4 0x15766b09 0xbfe31564 0xce963b1d 0xdc9a2a05 // method "getUserStakeInfo(account)(uint64,uint64,uint64,uint64)", method "storeUserStakeInfo(account,(uint64,uint64,uint64,uint64))void", method "getCurrentPeriod()uint64", method "initialize(asset,account,uint64,uint64,uint64)void", method "optInToAsset()void", method "stake()void", method "withdraw(uint64)void", method "addRewards()void", method "calculateUserRewardsForPeriod(account)uint64", method "calculatePendingRewards(account)uint64", method "claimRewards()void", method "updateAPR(uint64)void", method "updateAdmin(account)void", method "getUserStats(account)uint64[]", method "getContractStats()uint64[]", method "emergencyWithdrawRewards(uint64)void", method "deleteUserBox(account)void"
+    bz main_bare_routing@25
+    pushbytess 0x36dd05b4 0xa01a5ddc 0x0e93fde6 0x667c5d30 0x9ffd3e53 0x0890bd58 0x21f1ddff 0xb3b70146 0x0bd8cf60 0x6904ac5a 0x2b87f57c 0xf83eeb5d 0x1e6612bd 0x82ab1ec4 0x15766b09 0xbfe31564 0xce963b1d 0xdc9a2a05 // method "getUserStakeInfo(account)(uint64,uint64,uint64,uint64)", method "storeUserStakeInfo(account,(uint64,uint64,uint64,uint64))void", method "getCurrentPeriod()uint64", method "initialize(asset,account,uint64,uint64,uint64)void", method "optInToAsset()void", method "stake()void", method "withdraw(uint64)void", method "addRewards()void", method "calculateUserRewardsForPeriod(account)uint64", method "calculatePendingRewards(account)uint64", method "distributeRewards(address[])void", method "getActiveStakersCount(address[])uint64", method "updateAPR(uint64)void", method "updateAdmin(account)void", method "getUserStats(account)uint64[]", method "getContractStats()uint64[]", method "emergencyWithdrawRewards(uint64)void", method "deleteUserBox(account)void"
     txna ApplicationArgs 0
-    match main_getUserStakeInfo_route@5 main_storeUserStakeInfo_route@6 main_getCurrentPeriod_route@7 main_initialize_route@8 main_optInToAsset_route@9 main_stake_route@10 main_withdraw_route@11 main_addRewards_route@12 main_calculateUserRewardsForPeriod_route@13 main_calculatePendingRewards_route@14 main_claimRewards_route@15 main_updateAPR_route@16 main_updateAdmin_route@17 main_getUserStats_route@18 main_getContractStats_route@19 main_emergencyWithdrawRewards_route@20 main_deleteUserBox_route@21
+    match main_getUserStakeInfo_route@5 main_storeUserStakeInfo_route@6 main_getCurrentPeriod_route@7 main_initialize_route@8 main_optInToAsset_route@9 main_stake_route@10 main_withdraw_route@11 main_addRewards_route@12 main_calculateUserRewardsForPeriod_route@13 main_calculatePendingRewards_route@14 main_distributeRewards_route@15 main_getActiveStakersCount_route@16 main_updateAPR_route@17 main_updateAdmin_route@18 main_getUserStats_route@19 main_getContractStats_route@20 main_emergencyWithdrawRewards_route@21 main_deleteUserBox_route@22
 
-main_after_if_else@28:
+main_after_if_else@29:
     // smart_contracts/staking/contract.algo.ts:46-47
     // @contract({ stateTotals: { globalBytes: 8 } })
     // export class ASAStakingContract extends Contract {
     intc_0 // 0
     return
 
-main_deleteUserBox_route@21:
-    // smart_contracts/staking/contract.algo.ts:465
+main_deleteUserBox_route@22:
+    // smart_contracts/staking/contract.algo.ts:517
     // @abimethod()
     txn OnCompletion
     !
@@ -79,14 +79,14 @@ main_deleteUserBox_route@21:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:465
+    // smart_contracts/staking/contract.algo.ts:517
     // @abimethod()
     callsub deleteUserBox
     intc_1 // 1
     return
 
-main_emergencyWithdrawRewards_route@20:
-    // smart_contracts/staking/contract.algo.ts:437
+main_emergencyWithdrawRewards_route@21:
+    // smart_contracts/staking/contract.algo.ts:489
     // @abimethod()
     txn OnCompletion
     !
@@ -98,14 +98,14 @@ main_emergencyWithdrawRewards_route@20:
     // export class ASAStakingContract extends Contract {
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/staking/contract.algo.ts:437
+    // smart_contracts/staking/contract.algo.ts:489
     // @abimethod()
     callsub emergencyWithdrawRewards
     intc_1 // 1
     return
 
-main_getContractStats_route@19:
-    // smart_contracts/staking/contract.algo.ts:418
+main_getContractStats_route@20:
+    // smart_contracts/staking/contract.algo.ts:470
     // @abimethod({ readonly: true })
     txn OnCompletion
     !
@@ -120,8 +120,8 @@ main_getContractStats_route@19:
     intc_1 // 1
     return
 
-main_getUserStats_route@18:
-    // smart_contracts/staking/contract.algo.ts:399
+main_getUserStats_route@19:
+    // smart_contracts/staking/contract.algo.ts:451
     // @abimethod({ readonly: true })
     txn OnCompletion
     !
@@ -134,7 +134,7 @@ main_getUserStats_route@18:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:399
+    // smart_contracts/staking/contract.algo.ts:451
     // @abimethod({ readonly: true })
     callsub getUserStats
     bytec 4 // 0x151f7c75
@@ -144,8 +144,8 @@ main_getUserStats_route@18:
     intc_1 // 1
     return
 
-main_updateAdmin_route@17:
-    // smart_contracts/staking/contract.algo.ts:386
+main_updateAdmin_route@18:
+    // smart_contracts/staking/contract.algo.ts:438
     // @abimethod()
     txn OnCompletion
     !
@@ -158,14 +158,14 @@ main_updateAdmin_route@17:
     txna ApplicationArgs 1
     btoi
     txnas Accounts
-    // smart_contracts/staking/contract.algo.ts:386
+    // smart_contracts/staking/contract.algo.ts:438
     // @abimethod()
     callsub updateAdmin
     intc_1 // 1
     return
 
-main_updateAPR_route@16:
-    // smart_contracts/staking/contract.algo.ts:372
+main_updateAPR_route@17:
+    // smart_contracts/staking/contract.algo.ts:424
     // @abimethod()
     txn OnCompletion
     !
@@ -177,21 +177,50 @@ main_updateAPR_route@16:
     // export class ASAStakingContract extends Contract {
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/staking/contract.algo.ts:372
+    // smart_contracts/staking/contract.algo.ts:424
     // @abimethod()
     callsub updateAPR
     intc_1 // 1
     return
 
-main_claimRewards_route@15:
-    // smart_contracts/staking/contract.algo.ts:336
+main_getActiveStakersCount_route@16:
+    // smart_contracts/staking/contract.algo.ts:406
+    // @abimethod({ readonly: true })
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/staking/contract.algo.ts:46-47
+    // @contract({ stateTotals: { globalBytes: 8 } })
+    // export class ASAStakingContract extends Contract {
+    txna ApplicationArgs 1
+    // smart_contracts/staking/contract.algo.ts:406
+    // @abimethod({ readonly: true })
+    callsub getActiveStakersCount
+    itob
+    bytec 4 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_1 // 1
+    return
+
+main_distributeRewards_route@15:
+    // smart_contracts/staking/contract.algo.ts:381
     // @abimethod()
     txn OnCompletion
     !
     assert // OnCompletion is not NoOp
     txn ApplicationID
     assert // can only call when not creating
-    callsub claimRewards
+    // smart_contracts/staking/contract.algo.ts:46-47
+    // @contract({ stateTotals: { globalBytes: 8 } })
+    // export class ASAStakingContract extends Contract {
+    txna ApplicationArgs 1
+    // smart_contracts/staking/contract.algo.ts:381
+    // @abimethod()
+    callsub distributeRewards
     intc_1 // 1
     return
 
@@ -392,12 +421,12 @@ main_getUserStakeInfo_route@5:
     intc_1 // 1
     return
 
-main_bare_routing@24:
+main_bare_routing@25:
     // smart_contracts/staking/contract.algo.ts:46-47
     // @contract({ stateTotals: { globalBytes: 8 } })
     // export class ASAStakingContract extends Contract {
     txn OnCompletion
-    bnz main_after_if_else@28
+    bnz main_after_if_else@29
     txn ApplicationID
     !
     assert // can only call when creating
@@ -474,7 +503,7 @@ getCurrentPeriod:
     // smart_contracts/staking/contract.algo.ts:53
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 6 // "distributionPeriodSeconds"
+    bytec 7 // "distributionPeriodSeconds"
     app_global_get_ex
     swap
     dup
@@ -534,14 +563,14 @@ initialize:
     app_global_put
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     // smart_contracts/staking/contract.algo.ts:112
     // this.adminAddress.value = adminAddress
     frame_dig -4
     app_global_put
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     // smart_contracts/staking/contract.algo.ts:113
     // this.totalStaked.value = 0
     intc_0 // 0
@@ -555,21 +584,21 @@ initialize:
     app_global_put
     // smart_contracts/staking/contract.algo.ts:52
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
-    bytec 8 // "lastDistributionTime"
+    bytec 6 // "lastDistributionTime"
     // smart_contracts/staking/contract.algo.ts:115
     // this.lastDistributionTime.value = Global.latestTimestamp
     global LatestTimestamp
     app_global_put
     // smart_contracts/staking/contract.algo.ts:53
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
-    bytec 6 // "distributionPeriodSeconds"
+    bytec 7 // "distributionPeriodSeconds"
     // smart_contracts/staking/contract.algo.ts:116
     // this.distributionPeriodSeconds.value = distributionPeriodSeconds
     frame_dig -2
     app_global_put
     // smart_contracts/staking/contract.algo.ts:54
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
-    bytec 7 // "minimumStake"
+    bytec 8 // "minimumStake"
     // smart_contracts/staking/contract.algo.ts:117
     // this.minimumStake.value = minimumStake
     frame_dig -1
@@ -593,7 +622,7 @@ optInToAsset:
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:128
@@ -733,7 +762,7 @@ stake:
     // smart_contracts/staking/contract.algo.ts:54
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 7 // "minimumStake"
+    bytec 8 // "minimumStake"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:166
@@ -791,7 +820,7 @@ stake_after_if_else@2:
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:184
@@ -799,7 +828,7 @@ stake_after_if_else@2:
     +
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     // smart_contracts/staking/contract.algo.ts:184
     // this.totalStaked.value = this.totalStaked.value + stakeAmount
     swap
@@ -850,7 +879,7 @@ withdraw:
     // smart_contracts/staking/contract.algo.ts:54
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 7 // "minimumStake"
+    bytec 8 // "minimumStake"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:205
@@ -877,7 +906,7 @@ withdraw_after_if_else@2:
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:215
@@ -886,7 +915,7 @@ withdraw_after_if_else@2:
     -
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     // smart_contracts/staking/contract.algo.ts:215
     // this.totalStaked.value = this.totalStaked.value - amount
     swap
@@ -947,7 +976,7 @@ addRewards:
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:238
@@ -1024,7 +1053,7 @@ addRewards:
     app_global_put
     // smart_contracts/staking/contract.algo.ts:52
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
-    bytec 8 // "lastDistributionTime"
+    bytec 6 // "lastDistributionTime"
     // smart_contracts/staking/contract.algo.ts:255
     // this.lastDistributionTime.value = Global.latestTimestamp
     global LatestTimestamp
@@ -1049,13 +1078,13 @@ calculateUserRewardsForPeriod:
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:53
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 6 // "distributionPeriodSeconds"
+    bytec 7 // "distributionPeriodSeconds"
     app_global_get_ex
     swap
     cover 2
@@ -1216,51 +1245,134 @@ calculatePendingRewards_ternary_false@4:
     b calculatePendingRewards_ternary_merge@5
 
 
-// smart_contracts/staking/contract.algo.ts::ASAStakingContract.claimRewards() -> void:
-claimRewards:
-    // smart_contracts/staking/contract.algo.ts:338
-    // const senderAddress = Txn.sender
+// smart_contracts/staking/contract.algo.ts::ASAStakingContract.distributeRewards(stakerAddresses: bytes) -> void:
+distributeRewards:
+    // smart_contracts/staking/contract.algo.ts:381-382
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    proto 1 0
+    intc_0 // 0
+    dup
+    pushbytes ""
+    dup
+    // smart_contracts/staking/contract.algo.ts:49
+    // public adminAddress = GlobalState<Account>({ initialValue: Account()})
+    intc_0 // 0
+    bytec_2 // "adminAddress"
+    app_global_get_ex
+    assert // check GlobalState exists
+    // smart_contracts/staking/contract.algo.ts:385
+    // assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
     txn Sender
-    // smart_contracts/staking/contract.algo.ts:339
-    // const stakeInfo = this.getUserStakeInfo(senderAddress)
+    ==
+    assert // Only admin can distribute rewards
+    // smart_contracts/staking/contract.algo.ts:388
+    // assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    frame_dig -1
+    intc_0 // 0
+    extract_uint16
     dup
+    pushint 50 // 50
+    <=
+    assert // Too many stakers in single batch
+    // smart_contracts/staking/contract.algo.ts:390
+    // let totalDistributed: uint64 = 0
+    intc_0 // 0
+    dup
+
+distributeRewards_for_header@1:
+    // smart_contracts/staking/contract.algo.ts:393
+    // for (const staker of stakerAddresses) {
+    frame_dig 6
+    frame_dig 4
+    <
+    bz distributeRewards_after_for@4
+    frame_dig -1
+    extract 2 0
+    frame_dig 6
+    pushint 32 // 32
+    *
+    pushint 32 // 32
+    extract3 // on error: Index access is out of bounds
+    dup
+    frame_bury 1
+    // smart_contracts/staking/contract.algo.ts:337
+    // const stakeInfo = this.getUserStakeInfo(userAddress)
     callsub getUserStakeInfo
-    // smart_contracts/staking/contract.algo.ts:342
-    // assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
     dup
+    frame_bury 0
+    // smart_contracts/staking/contract.algo.ts:340
+    // if (stakeInfo.stakedAmount.native === 0) {
     intc_0 // 0
     extract_uint64
     dup
-    assert // No stake found
+    frame_bury 3
+    bnz distributeRewards_after_if_else@7
+    // smart_contracts/staking/contract.algo.ts:341
+    // return 0
+    intc_0 // 0
+
+distributeRewards_after_inlined_smart_contracts/staking/contract.algo.ts::ASAStakingContract.compoundRewardsForUser@12:
+    // smart_contracts/staking/contract.algo.ts:395
+    // totalDistributed = totalDistributed + rewardsCompounded
+    frame_dig 5
+    +
+    frame_bury 5
+    frame_dig 6
+    intc_1 // 1
+    +
+    frame_bury 6
+    b distributeRewards_for_header@1
+
+distributeRewards_after_if_else@7:
     // smart_contracts/staking/contract.algo.ts:345
-    // const pendingRewards = this.calculatePendingRewards(senderAddress)
-    dig 2
+    // const pendingRewards = this.calculatePendingRewards(userAddress)
+    frame_dig 1
     callsub calculatePendingRewards
-    // smart_contracts/staking/contract.algo.ts:346
-    // assert(pendingRewards > 0, 'No rewards to claim')
     dup
-    assert // No rewards to claim
+    frame_bury 2
+    // smart_contracts/staking/contract.algo.ts:348
+    // if (pendingRewards === 0) {
+    bnz distributeRewards_after_if_else@9
+    // smart_contracts/staking/contract.algo.ts:349
+    // return 0
+    intc_0 // 0
+    // smart_contracts/staking/contract.algo.ts:394
+    // const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    b distributeRewards_after_inlined_smart_contracts/staking/contract.algo.ts::ASAStakingContract.compoundRewardsForUser@12
+
+distributeRewards_after_if_else@9:
     // smart_contracts/staking/contract.algo.ts:55
     // public rewardPool = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
     bytec_0 // "rewardPool"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:349
-    // assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
-    dig 1
-    >=
-    assert // Insufficient reward pool
-    // smart_contracts/staking/contract.algo.ts:352
+    // smart_contracts/staking/contract.algo.ts:353
+    // if (this.rewardPool.value < pendingRewards) {
+    frame_dig 2
+    <
+    bz distributeRewards_after_if_else@11
+    // smart_contracts/staking/contract.algo.ts:354
+    // return 0
+    intc_0 // 0
+    // smart_contracts/staking/contract.algo.ts:394
+    // const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    b distributeRewards_after_inlined_smart_contracts/staking/contract.algo.ts::ASAStakingContract.compoundRewardsForUser@12
+
+distributeRewards_after_if_else@11:
+    // smart_contracts/staking/contract.algo.ts:358
     // stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
-    swap
-    dig 1
+    frame_dig 3
+    frame_dig 2
+    dup
+    cover 2
     +
     itob
-    uncover 2
+    frame_dig 0
     swap
     replace2 0
-    // smart_contracts/staking/contract.algo.ts:355
+    // smart_contracts/staking/contract.algo.ts:361
     // stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
     dup
     pushint 16 // 16
@@ -1269,31 +1381,31 @@ claimRewards:
     +
     itob
     replace2 16
-    // smart_contracts/staking/contract.algo.ts:358
+    // smart_contracts/staking/contract.algo.ts:364
     // stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     callsub getCurrentPeriod
     itob
     replace2 24
-    // smart_contracts/staking/contract.algo.ts:361
-    // this.storeUserStakeInfo(senderAddress, stakeInfo)
-    uncover 2
+    // smart_contracts/staking/contract.algo.ts:367
+    // this.storeUserStakeInfo(userAddress, stakeInfo)
+    frame_dig 1
     swap
     callsub storeUserStakeInfo
     pop
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:364
+    // smart_contracts/staking/contract.algo.ts:370
     // this.totalStaked.value = this.totalStaked.value + pendingRewards
     dig 1
     +
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
-    bytec_2 // "totalStaked"
-    // smart_contracts/staking/contract.algo.ts:364
+    bytec_3 // "totalStaked"
+    // smart_contracts/staking/contract.algo.ts:370
     // this.totalStaked.value = this.totalStaked.value + pendingRewards
     swap
     app_global_put
@@ -1303,33 +1415,110 @@ claimRewards:
     bytec_0 // "rewardPool"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:365
+    // smart_contracts/staking/contract.algo.ts:371
     // this.rewardPool.value = this.rewardPool.value - pendingRewards
-    swap
+    dig 1
     -
     // smart_contracts/staking/contract.algo.ts:55
     // public rewardPool = GlobalState<uint64>({ initialValue: 0 })
     bytec_0 // "rewardPool"
-    // smart_contracts/staking/contract.algo.ts:365
+    // smart_contracts/staking/contract.algo.ts:371
     // this.rewardPool.value = this.rewardPool.value - pendingRewards
     swap
     app_global_put
+    // smart_contracts/staking/contract.algo.ts:394
+    // const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    b distributeRewards_after_inlined_smart_contracts/staking/contract.algo.ts::ASAStakingContract.compoundRewardsForUser@12
+
+distributeRewards_after_for@4:
+    // smart_contracts/staking/contract.algo.ts:52
+    // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
+    bytec 6 // "lastDistributionTime"
+    // smart_contracts/staking/contract.algo.ts:399
+    // this.lastDistributionTime.value = Global.latestTimestamp
+    global LatestTimestamp
+    app_global_put
+    retsub
+
+
+// smart_contracts/staking/contract.algo.ts::ASAStakingContract.getActiveStakersCount(stakerAddresses: bytes) -> uint64:
+getActiveStakersCount:
+    // smart_contracts/staking/contract.algo.ts:406-407
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    proto 1 1
+    pushbytes ""
+    // smart_contracts/staking/contract.algo.ts:408
+    // let activeCount: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/staking/contract.algo.ts:410
+    // for (const staker of stakerAddresses) {
+    frame_dig -1
+    intc_0 // 0
+    extract_uint16
+    intc_0 // 0
+
+getActiveStakersCount_for_header@1:
+    // smart_contracts/staking/contract.algo.ts:410
+    // for (const staker of stakerAddresses) {
+    frame_dig 3
+    frame_dig 2
+    <
+    bz getActiveStakersCount_after_for@6
+    frame_dig -1
+    extract 2 0
+    frame_dig 3
+    pushint 32 // 32
+    *
+    pushint 32 // 32
+    extract3 // on error: Index access is out of bounds
+    // smart_contracts/staking/contract.algo.ts:411
+    // const stakeInfo = this.getUserStakeInfo(staker.native)
+    callsub getUserStakeInfo
+    // smart_contracts/staking/contract.algo.ts:412
+    // if (stakeInfo.stakedAmount.native > 0) {
+    intc_0 // 0
+    extract_uint64
+    frame_dig 1
+    frame_bury 0
+    bz getActiveStakersCount_after_if_else@4
+    // smart_contracts/staking/contract.algo.ts:413
+    // activeCount = activeCount + 1
+    frame_dig 1
+    intc_1 // 1
+    +
+    frame_bury 0
+
+getActiveStakersCount_after_if_else@4:
+    frame_dig 0
+    frame_bury 1
+    frame_dig 3
+    intc_1 // 1
+    +
+    frame_bury 3
+    b getActiveStakersCount_for_header@1
+
+getActiveStakersCount_after_for@6:
+    // smart_contracts/staking/contract.algo.ts:417
+    // return activeCount
+    frame_dig 1
+    frame_bury 0
     retsub
 
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.updateAPR(newAprBasisPoints: uint64) -> void:
 updateAPR:
-    // smart_contracts/staking/contract.algo.ts:372-373
+    // smart_contracts/staking/contract.algo.ts:424-425
     // @abimethod()
     // public updateAPR(newAprBasisPoints: uint64): void {
     proto 1 0
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:376
+    // smart_contracts/staking/contract.algo.ts:428
     // assert(Txn.sender === adminAddr, 'Only admin can update APR')
     txn Sender
     ==
@@ -1337,7 +1526,7 @@ updateAPR:
     // smart_contracts/staking/contract.algo.ts:51
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     bytec 5 // "aprBasisPoints"
-    // smart_contracts/staking/contract.algo.ts:379
+    // smart_contracts/staking/contract.algo.ts:431
     // this.aprBasisPoints.value = newAprBasisPoints
     frame_dig -1
     app_global_put
@@ -1346,25 +1535,25 @@ updateAPR:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.updateAdmin(newAdminAddress: bytes) -> void:
 updateAdmin:
-    // smart_contracts/staking/contract.algo.ts:386-387
+    // smart_contracts/staking/contract.algo.ts:438-439
     // @abimethod()
     // public updateAdmin(newAdminAddress: Account): void {
     proto 1 0
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:390
+    // smart_contracts/staking/contract.algo.ts:442
     // assert(Txn.sender === adminAddr, 'Only admin can update admin')
     txn Sender
     ==
     assert // Only admin can update admin
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
-    bytec_3 // "adminAddress"
-    // smart_contracts/staking/contract.algo.ts:393
+    bytec_2 // "adminAddress"
+    // smart_contracts/staking/contract.algo.ts:445
     // this.adminAddress.value = newAdminAddress
     frame_dig -1
     app_global_put
@@ -1373,80 +1562,80 @@ updateAdmin:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.getUserStats(userAddress: bytes) -> bytes:
 getUserStats:
-    // smart_contracts/staking/contract.algo.ts:399-400
+    // smart_contracts/staking/contract.algo.ts:451-452
     // @abimethod({ readonly: true })
     // public getUserStats(userAddress: Account): Array<uint64> {
     proto 1 1
-    // smart_contracts/staking/contract.algo.ts:401
+    // smart_contracts/staking/contract.algo.ts:453
     // const stakeInfo = this.getUserStakeInfo(userAddress)
     frame_dig -1
     callsub getUserStakeInfo
-    // smart_contracts/staking/contract.algo.ts:402
+    // smart_contracts/staking/contract.algo.ts:454
     // const pendingRewards = this.calculatePendingRewards(userAddress)
     frame_dig -1
     callsub calculatePendingRewards
-    // smart_contracts/staking/contract.algo.ts:405
+    // smart_contracts/staking/contract.algo.ts:457
     // stakeInfo.stakedAmount.native,
     dig 1
     intc_0 // 0
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:406
+    // smart_contracts/staking/contract.algo.ts:458
     // stakeInfo.lastStakeTime.native,
     dig 2
     intc_3 // 8
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:407
+    // smart_contracts/staking/contract.algo.ts:459
     // stakeInfo.totalRewardsEarned.native,
     dig 3
     pushint 16 // 16
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:409
+    // smart_contracts/staking/contract.algo.ts:461
     // stakeInfo.lastClaimedPeriod.native,
     uncover 4
     pushint 24 // 24
     extract_uint64
-    // smart_contracts/staking/contract.algo.ts:405
+    // smart_contracts/staking/contract.algo.ts:457
     // stakeInfo.stakedAmount.native,
     uncover 3
     itob
-    // smart_contracts/staking/contract.algo.ts:406
+    // smart_contracts/staking/contract.algo.ts:458
     // stakeInfo.lastStakeTime.native,
     uncover 3
     itob
-    // smart_contracts/staking/contract.algo.ts:405-409
+    // smart_contracts/staking/contract.algo.ts:457-461
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
     // pendingRewards,
     // stakeInfo.lastClaimedPeriod.native,
     concat
-    // smart_contracts/staking/contract.algo.ts:407
+    // smart_contracts/staking/contract.algo.ts:459
     // stakeInfo.totalRewardsEarned.native,
     uncover 2
     itob
-    // smart_contracts/staking/contract.algo.ts:405-409
+    // smart_contracts/staking/contract.algo.ts:457-461
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
     // pendingRewards,
     // stakeInfo.lastClaimedPeriod.native,
     concat
-    // smart_contracts/staking/contract.algo.ts:408
+    // smart_contracts/staking/contract.algo.ts:460
     // pendingRewards,
     uncover 2
     itob
-    // smart_contracts/staking/contract.algo.ts:405-409
+    // smart_contracts/staking/contract.algo.ts:457-461
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
     // pendingRewards,
     // stakeInfo.lastClaimedPeriod.native,
     concat
-    // smart_contracts/staking/contract.algo.ts:409
+    // smart_contracts/staking/contract.algo.ts:461
     // stakeInfo.lastClaimedPeriod.native,
     swap
     itob
-    // smart_contracts/staking/contract.algo.ts:405-409
+    // smart_contracts/staking/contract.algo.ts:457-461
     // stakeInfo.stakedAmount.native,
     // stakeInfo.lastStakeTime.native,
     // stakeInfo.totalRewardsEarned.native,
@@ -1461,7 +1650,7 @@ getUserStats:
     extract 6 2
     swap
     concat
-    // smart_contracts/staking/contract.algo.ts:412
+    // smart_contracts/staking/contract.algo.ts:464
     // return result
     retsub
 
@@ -1477,7 +1666,7 @@ getContractStats:
     // smart_contracts/staking/contract.algo.ts:50
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec_2 // "totalStaked"
+    bytec_3 // "totalStaked"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:51
@@ -1489,19 +1678,19 @@ getContractStats:
     // smart_contracts/staking/contract.algo.ts:52
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 8 // "lastDistributionTime"
+    bytec 6 // "lastDistributionTime"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:53
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 6 // "distributionPeriodSeconds"
+    bytec 7 // "distributionPeriodSeconds"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:54
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
     intc_0 // 0
-    bytec 7 // "minimumStake"
+    bytec 8 // "minimumStake"
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/staking/contract.algo.ts:55
@@ -1510,7 +1699,7 @@ getContractStats:
     bytec_0 // "rewardPool"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:428
+    // smart_contracts/staking/contract.algo.ts:480
     // this.getCurrentPeriod(),
     callsub getCurrentPeriod
     // smart_contracts/staking/contract.algo.ts:48
@@ -1521,7 +1710,7 @@ getContractStats:
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     uncover 7
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -1805,23 +1994,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -1833,11 +2028,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -1906,7 +2147,7 @@ getContractStats:
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     uncover 6
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -2190,23 +2431,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -2218,11 +2465,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -2291,7 +2584,7 @@ getContractStats:
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
     uncover 5
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -2575,23 +2868,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -2603,11 +2902,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -2676,7 +3021,7 @@ getContractStats:
     // public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
     uncover 4
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -2960,23 +3305,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -2988,11 +3339,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -3061,7 +3458,7 @@ getContractStats:
     // public minimumStake = GlobalState<uint64>({ initialValue: 0 })
     uncover 3
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -3345,23 +3742,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -3373,11 +3776,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -3446,7 +3895,7 @@ getContractStats:
     // public rewardPool = GlobalState<uint64>({ initialValue: 0 })
     uncover 2
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -3730,23 +4179,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -3758,11 +4213,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -3827,11 +4328,11 @@ getContractStats:
     //     this.rewardPool.value,
     //     this.getCurrentPeriod(),
     concat
-    // smart_contracts/staking/contract.algo.ts:428
+    // smart_contracts/staking/contract.algo.ts:480
     // this.getCurrentPeriod(),
     swap
     itob
-    // smart_contracts/staking/contract.algo.ts:50-428
+    // smart_contracts/staking/contract.algo.ts:50-480
     // public totalStaked = GlobalState<uint64>({ initialValue: 0 })
     // public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
     // public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
@@ -4115,23 +4616,29 @@ getContractStats:
     // }
     // 
     // /**
-    //  * Claim rewards for the caller with auto-compounding
-    //  * This implements the pull-based reward model with automatic compounding
+    //  * Helper function to compound rewards for a single user
+    //  * Used by the automated distribution system
     //  */
-    // @abimethod()
-    // public claimRewards(): void {
-    //   const senderAddress = Txn.sender
-    //   const stakeInfo = this.getUserStakeInfo(senderAddress)
+    // private compoundRewardsForUser(userAddress: Account): uint64 {
+    //   const stakeInfo = this.getUserStakeInfo(userAddress)
     // 
-    //   // Ensure user has a stake
-    //   assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
+    //   // Skip if user has no stake
+    //   if (stakeInfo.stakedAmount.native === 0) {
+    //     return 0
+    //   }
     // 
     //   // Calculate pending rewards
-    //   const pendingRewards = this.calculatePendingRewards(senderAddress)
-    //   assert(pendingRewards > 0, 'No rewards to claim')
+    //   const pendingRewards = this.calculatePendingRewards(userAddress)
     // 
-    //   // Ensure reward pool has sufficient funds
-    //   assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
+    //   // Skip if no rewards to compound
+    //   if (pendingRewards === 0) {
+    //     return 0
+    //   }
+    // 
+    //   // Skip if reward pool has insufficient funds for this user
+    //   if (this.rewardPool.value < pendingRewards) {
+    //     return 0
+    //   }
     // 
     //   // Auto-compound: Add rewards to staked amount
     //   stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
@@ -4143,11 +4650,57 @@ getContractStats:
     //   stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
     // 
     //   // Store updated stake info
-    //   this.storeUserStakeInfo(senderAddress, stakeInfo)
+    //   this.storeUserStakeInfo(userAddress, stakeInfo)
     // 
     //   // Update global state
     //   this.totalStaked.value = this.totalStaked.value + pendingRewards
     //   this.rewardPool.value = this.rewardPool.value - pendingRewards
+    // 
+    //   return pendingRewards
+    // }
+    // 
+    // /**
+    //  * Distribute and compound rewards for multiple stakers
+    //  * This method is designed to be called by a cron job on a daily basis
+    //  * Only admin can call this method
+    //  */
+    // @abimethod()
+    // public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    //   // Ensure only admin can distribute rewards
+    //   const adminAddr = this.adminAddress.value
+    //   assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    // 
+    //   // Ensure we don't process too many stakers in one call (gas limit protection)
+    //   assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    // 
+    //   let totalDistributed: uint64 = 0
+    // 
+    //   // Process each staker
+    //   for (const staker of stakerAddresses) {
+    //     const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+    //     totalDistributed = totalDistributed + rewardsCompounded
+    //   }
+    // 
+    //   // Update last distribution time
+    //   this.lastDistributionTime.value = Global.latestTimestamp
+    // }
+    // 
+    // /**
+    //  * Get all non-zero stakers count (for monitoring purposes)
+    //  * Note: This doesn't return the actual addresses due to box iteration limitations
+    //  */
+    // @abimethod({ readonly: true })
+    // public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    //   let activeCount: uint64 = 0
+    // 
+    //   for (const staker of stakerAddresses) {
+    //     const stakeInfo = this.getUserStakeInfo(staker.native)
+    //     if (stakeInfo.stakedAmount.native > 0) {
+    //       activeCount = activeCount + 1
+    //     }
+    //   }
+    // 
+    //   return activeCount
     // }
     // 
     // /**
@@ -4220,24 +4773,24 @@ getContractStats:
     extract 6 2
     swap
     concat
-    // smart_contracts/staking/contract.algo.ts:431
+    // smart_contracts/staking/contract.algo.ts:483
     // return result
     retsub
 
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.emergencyWithdrawRewards(amount: uint64) -> void:
 emergencyWithdrawRewards:
-    // smart_contracts/staking/contract.algo.ts:437-438
+    // smart_contracts/staking/contract.algo.ts:489-490
     // @abimethod()
     // public emergencyWithdrawRewards(amount: uint64): void {
     proto 1 0
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     intc_0 // 0
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:441
+    // smart_contracts/staking/contract.algo.ts:493
     // assert(Txn.sender === adminAddr, 'Only admin can emergency withdraw')
     txn Sender
     dig 1
@@ -4249,7 +4802,7 @@ emergencyWithdrawRewards:
     bytec_0 // "rewardPool"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:444
+    // smart_contracts/staking/contract.algo.ts:496
     // assert(this.rewardPool.value >= amount, 'Insufficient reward pool')
     frame_dig -1
     >=
@@ -4260,14 +4813,14 @@ emergencyWithdrawRewards:
     bytec_0 // "rewardPool"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:447
+    // smart_contracts/staking/contract.algo.ts:499
     // this.rewardPool.value = this.rewardPool.value - amount
     frame_dig -1
     -
     // smart_contracts/staking/contract.algo.ts:55
     // public rewardPool = GlobalState<uint64>({ initialValue: 0 })
     bytec_0 // "rewardPool"
-    // smart_contracts/staking/contract.algo.ts:447
+    // smart_contracts/staking/contract.algo.ts:499
     // this.rewardPool.value = this.rewardPool.value - amount
     swap
     app_global_put
@@ -4277,7 +4830,7 @@ emergencyWithdrawRewards:
     bytec_1 // "asset"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:451-458
+    // smart_contracts/staking/contract.algo.ts:503-510
     // itxn
     //   .assetTransfer({
     //     assetReceiver: adminAddr,
@@ -4291,7 +4844,7 @@ emergencyWithdrawRewards:
     frame_dig -1
     itxn_field AssetAmount
     itxn_field AssetReceiver
-    // smart_contracts/staking/contract.algo.ts:451-457
+    // smart_contracts/staking/contract.algo.ts:503-509
     // itxn
     //   .assetTransfer({
     //     assetReceiver: adminAddr,
@@ -4301,11 +4854,11 @@ emergencyWithdrawRewards:
     //   })
     intc_2 // 4
     itxn_field TypeEnum
-    // smart_contracts/staking/contract.algo.ts:456
+    // smart_contracts/staking/contract.algo.ts:508
     // fee: 1000,
     pushint 1000 // 1000
     itxn_field Fee
-    // smart_contracts/staking/contract.algo.ts:451-458
+    // smart_contracts/staking/contract.algo.ts:503-510
     // itxn
     //   .assetTransfer({
     //     assetReceiver: adminAddr,
@@ -4320,7 +4873,7 @@ emergencyWithdrawRewards:
 
 // smart_contracts/staking/contract.algo.ts::ASAStakingContract.deleteUserBox(userAddress: bytes) -> void:
 deleteUserBox:
-    // smart_contracts/staking/contract.algo.ts:465-466
+    // smart_contracts/staking/contract.algo.ts:517-518
     // @abimethod()
     // public deleteUserBox(userAddress: Account): void {
     proto 1 0
@@ -4328,10 +4881,10 @@ deleteUserBox:
     // smart_contracts/staking/contract.algo.ts:49
     // public adminAddress = GlobalState<Account>({ initialValue: Account()})
     dup
-    bytec_3 // "adminAddress"
+    bytec_2 // "adminAddress"
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/staking/contract.algo.ts:471
+    // smart_contracts/staking/contract.algo.ts:523
     // assert(Txn.sender === boxOwner || Txn.sender === adminAddr, 'Only box owner or admin can delete box')
     txn Sender
     frame_dig -1
@@ -4346,14 +4899,14 @@ deleteUserBox_bool_true@2:
     intc_1 // 1
 
 deleteUserBox_bool_merge@4:
-    // smart_contracts/staking/contract.algo.ts:471
+    // smart_contracts/staking/contract.algo.ts:523
     // assert(Txn.sender === boxOwner || Txn.sender === adminAddr, 'Only box owner or admin can delete box')
     assert // Only box owner or admin can delete box
-    // smart_contracts/staking/contract.algo.ts:474
+    // smart_contracts/staking/contract.algo.ts:526
     // const stakeInfo = this.getUserStakeInfo(userAddress)
     frame_dig -1
     callsub getUserStakeInfo
-    // smart_contracts/staking/contract.algo.ts:475
+    // smart_contracts/staking/contract.algo.ts:527
     // assert(stakeInfo.stakedAmount.native === 0, 'User still has active stake')
     intc_0 // 0
     extract_uint64
@@ -4362,22 +4915,22 @@ deleteUserBox_bool_merge@4:
     // smart_contracts/staking/contract.algo.ts:57
     // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
     bytec 9 // "stakers"
-    // smart_contracts/staking/contract.algo.ts:478
+    // smart_contracts/staking/contract.algo.ts:530
     // const userBox = this.stakers(userAddress)
     frame_dig -1
     // smart_contracts/staking/contract.algo.ts:57
     // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
     concat
-    // smart_contracts/staking/contract.algo.ts:478
+    // smart_contracts/staking/contract.algo.ts:530
     // const userBox = this.stakers(userAddress)
     dup
     frame_bury 0
-    // smart_contracts/staking/contract.algo.ts:479
+    // smart_contracts/staking/contract.algo.ts:531
     // if (userBox.exists) {
     box_len
     bury 1
     bz deleteUserBox_after_if_else@6
-    // smart_contracts/staking/contract.algo.ts:480
+    // smart_contracts/staking/contract.algo.ts:532
     // userBox.delete()
     frame_dig 0
     box_del

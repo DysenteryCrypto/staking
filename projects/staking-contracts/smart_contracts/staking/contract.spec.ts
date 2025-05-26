@@ -88,6 +88,35 @@ describe('Staking contract', () => {
     })
   })
 
+  it("Cannot send incorrect asset", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const otherAsset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n], [otherAsset.id, 10000000000n]]) })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.aprBasisPoints.value = 10000
+    contract.distributionPeriodSeconds.value = 60 * 60 * 24
+    contract.minimumStake.value = 1000
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.optInToAsset()
+    })
+
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 1000,
+      assetSender: sender,
+      xferAsset: otherAsset,
+    })
+
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
+      expect(() => contract.stake()).toThrow()
+    })
+  })
+
   it('Must stake minimum amount', () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
@@ -444,5 +473,95 @@ describe('Staking contract', () => {
     expect(assetTransferTxn2.assetReceiver).toEqual(staker2)
     expect(assetTransferTxn2.assetSender).toEqual(app.address)
     expect(assetTransferTxn2.xferAsset).toEqual(asset)
+  })
+
+  it("must be admin to add rewards", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 1000000]]) })
+    
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 1000000,
+      assetSender: sender,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
+      expect(() => contract.addRewards()).toThrow()
+    })
+  })
+
+  it("must include companion ASA transfer", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      expect(() => contract.addRewards()).toThrow()
+    })
+  })
+
+  it("must transfer asset amount greater than 0", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 0,
+      assetSender: ctx.defaultSender,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 1).execute(() => {
+      expect(() => contract.addRewards()).toThrow()
+    })
+  })
+
+  it("can add rewards", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.rewardPool.value = 0
+
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 1000000,
+      assetSender: ctx.defaultSender,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 1).execute(() => {
+      contract.addRewards()
+    })
+
+    expect(contract.rewardPool.value).toEqual(1000000)
+
+    const txn2 = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 5,
+      assetSender: ctx.defaultSender,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn2, ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 1).execute(() => {
+      contract.addRewards()
+    })
+
+    expect(contract.rewardPool.value).toEqual(1000005)
   })
 })

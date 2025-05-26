@@ -330,39 +330,91 @@ export class ASAStakingContract extends Contract {
   }
 
   /**
-   * Claim rewards for the caller with auto-compounding
-   * This implements the pull-based reward model with automatic compounding
+   * Helper function to compound rewards for a single user
+   * Used by the automated distribution system
    */
-  @abimethod()
-  public claimRewards(): void {
-    const senderAddress = Txn.sender
-    const stakeInfo = this.getUserStakeInfo(senderAddress)
-
-    // Ensure user has a stake
-    assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
-
+  private compoundRewardsForUser(userAddress: Account): uint64 {
+    const stakeInfo = this.getUserStakeInfo(userAddress)
+    
+    // Skip if user has no stake
+    if (stakeInfo.stakedAmount.native === 0) {
+      return 0
+    }
+    
     // Calculate pending rewards
-    const pendingRewards = this.calculatePendingRewards(senderAddress)
-    assert(pendingRewards > 0, 'No rewards to claim')
-
-    // Ensure reward pool has sufficient funds
-    assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
-
+    const pendingRewards = this.calculatePendingRewards(userAddress)
+    
+    // Skip if no rewards to compound
+    if (pendingRewards === 0) {
+      return 0
+    }
+    
+    // Skip if reward pool has insufficient funds for this user
+    if (this.rewardPool.value < pendingRewards) {
+      return 0
+    }
+    
     // Auto-compound: Add rewards to staked amount
     stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
-
+    
     // Update total rewards earned
     stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
-
+    
     // Update last claimed period to current period
     stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
-
+    
     // Store updated stake info
-    this.storeUserStakeInfo(senderAddress, stakeInfo)
-
+    this.storeUserStakeInfo(userAddress, stakeInfo)
+    
     // Update global state
     this.totalStaked.value = this.totalStaked.value + pendingRewards
     this.rewardPool.value = this.rewardPool.value - pendingRewards
+    
+    return pendingRewards
+  }
+
+  /**
+   * Distribute and compound rewards for multiple stakers
+   * This method is designed to be called by a cron job on a daily basis
+   * Only admin can call this method
+   */
+  @abimethod()
+  public distributeRewards(stakerAddresses: arc4.Address[]): void {
+    // Ensure only admin can distribute rewards
+    const adminAddr = this.adminAddress.value
+    assert(Txn.sender === adminAddr, 'Only admin can distribute rewards')
+    
+    // Ensure we don't process too many stakers in one call (gas limit protection)
+    assert(stakerAddresses.length <= 50, 'Too many stakers in single batch')
+    
+    let totalDistributed: uint64 = 0
+    
+    // Process each staker
+    for (const staker of stakerAddresses) {
+      const rewardsCompounded = this.compoundRewardsForUser(staker.native)
+      totalDistributed = totalDistributed + rewardsCompounded
+    }
+    
+    // Update last distribution time
+    this.lastDistributionTime.value = Global.latestTimestamp
+  }
+
+  /**
+   * Get all non-zero stakers count (for monitoring purposes)
+   * Note: This doesn't return the actual addresses due to box iteration limitations
+   */
+  @abimethod({ readonly: true })
+  public getActiveStakersCount(stakerAddresses: arc4.Address[]): uint64 {
+    let activeCount: uint64 = 0
+    
+    for (const staker of stakerAddresses) {
+      const stakeInfo = this.getUserStakeInfo(staker.native)
+      if (stakeInfo.stakedAmount.native > 0) {
+        activeCount = activeCount + 1
+      }
+    }
+    
+    return activeCount
   }
 
   /**
