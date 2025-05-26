@@ -16,6 +16,7 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
+import { ROUNDS_PER_DAY, ROUNDS_PER_YEAR } from './constants.algo'
 
 /**
  * User stake information stored in box storage
@@ -23,6 +24,8 @@ import {
 export class UserStakeInfo extends arc4.Struct<{
   // Amount of tokens staked by this user
   stakedAmount: arc4.UintN64
+  // Timestamp when user first staked (never changes after first stake)
+  firstStakeTime: arc4.UintN64
   // Timestamp when user last staked or added to stake
   lastStakeTime: arc4.UintN64
   // Cumulative rewards earned
@@ -50,7 +53,7 @@ export class ASAStakingContract extends Contract {
   public totalStaked = GlobalState<uint64>({ initialValue: 0 })
   public aprBasisPoints = GlobalState<uint64>({ initialValue: 0 })
   public lastDistributionTime = GlobalState<uint64>({ initialValue: 0 })
-  public distributionPeriodSeconds = GlobalState<uint64>({ initialValue: 0 })
+  public distributionPeriodRounds = GlobalState<uint64>({ initialValue: 0 })
   public minimumStake = GlobalState<uint64>({ initialValue: 0 })
   public rewardPool = GlobalState<uint64>({ initialValue: 0 })
 
@@ -67,6 +70,7 @@ export class ASAStakingContract extends Contract {
     } else {
       return new UserStakeInfo({
         stakedAmount: new arc4.UintN64(0),
+        firstStakeTime: new arc4.UintN64(0),
         lastStakeTime: new arc4.UintN64(0),
         totalRewardsEarned: new arc4.UintN64(0),
         lastClaimedPeriod: new arc4.UintN64(0),
@@ -85,7 +89,7 @@ export class ASAStakingContract extends Contract {
    * Calculate the current distribution period
    */
   public getCurrentPeriod(): uint64 {
-    const periodSeconds = this.distributionPeriodSeconds.value
+    const periodSeconds = this.distributionPeriodRounds.value
     if (periodSeconds === 0) return 0
     return Global.latestTimestamp / periodSeconds
   }
@@ -113,7 +117,7 @@ export class ASAStakingContract extends Contract {
     this.totalStaked.value = 0
     this.aprBasisPoints.value = aprBasisPoints
     this.lastDistributionTime.value = Global.latestTimestamp
-    this.distributionPeriodSeconds.value = distributionPeriodSeconds
+    this.distributionPeriodRounds.value = distributionPeriodSeconds
     this.minimumStake.value = minimumStake
     this.rewardPool.value = 0
   }
@@ -171,6 +175,8 @@ export class ASAStakingContract extends Contract {
       assert(stakeAmount >= minimumStake, 'Initial stake below minimum')
       // Set the initial claim period to current period
       stakeInfo.lastClaimedPeriod = new arc4.UintN64(this.getCurrentPeriod())
+      // Set the first stake time (this never changes after initial stake)
+      stakeInfo.firstStakeTime = new arc4.UintN64(Global.latestTimestamp)
     }
 
     // Update stake info
@@ -250,9 +256,6 @@ export class ASAStakingContract extends Contract {
 
     // Add rewards to the pool
     this.rewardPool.value = this.rewardPool.value + xferTxn.assetAmount
-
-    // Update last distribution time
-    this.lastDistributionTime.value = Global.latestTimestamp
   }
 
   /**
@@ -263,7 +266,7 @@ export class ASAStakingContract extends Contract {
   public calculateUserRewardsForPeriod(userAddress: Account): uint64 {
     const apr = this.aprBasisPoints.value
     const totalStaked = this.totalStaked.value
-    const periodSeconds = this.distributionPeriodSeconds.value
+    const periodSeconds = this.distributionPeriodRounds.value
 
     // If no total stake or no period defined, return 0
     if (totalStaked === 0 || periodSeconds === 0) {
@@ -278,13 +281,13 @@ export class ASAStakingContract extends Contract {
       return 0
     }
 
-    // Get user's stake amount and last stake time
+    // Get user's stake amount and first stake time
     const userStake = stakeInfo.stakedAmount.native
-    const lastStakeTime = stakeInfo.lastStakeTime.native
+    const firstStakeTime = stakeInfo.firstStakeTime.native
 
-    // Check if user has been staked for the minimum period
-    const minimumStakeTime: uint64 = 86400 // 24 hours in seconds
-    if (Global.latestTimestamp < lastStakeTime + minimumStakeTime) {
+    // Check if user has been staked for the minimum period (using first stake time)
+    const minimumStakeTime: uint64 = ROUNDS_PER_DAY
+    if (Global.latestTimestamp < firstStakeTime + minimumStakeTime) {
       return 0
     }
 
@@ -292,7 +295,7 @@ export class ASAStakingContract extends Contract {
     // APR is in basis points (e.g., 500 = 5%)
     // Convert APR to period rate: (APR / 10000) * (periodSeconds / 31536000)
     // where 31536000 is seconds in a year
-    const yearInSeconds: uint64 = 31536000
+    const yearInSeconds: uint64 = ROUNDS_PER_YEAR
     const periodRateNumerator: uint64 = apr * periodSeconds
     const periodRateDenominator: uint64 = 10000 * yearInSeconds
 
@@ -455,6 +458,7 @@ export class ASAStakingContract extends Contract {
     
     const result: uint64[] = [
       stakeInfo.stakedAmount.native,
+      stakeInfo.firstStakeTime.native,
       stakeInfo.lastStakeTime.native,
       stakeInfo.totalRewardsEarned.native,
       pendingRewards,
@@ -474,7 +478,7 @@ export class ASAStakingContract extends Contract {
       this.totalStaked.value,
       this.aprBasisPoints.value,
       this.lastDistributionTime.value,
-      this.distributionPeriodSeconds.value,
+      this.distributionPeriodRounds.value,
       this.minimumStake.value,
       this.rewardPool.value,
       this.getCurrentPeriod(),

@@ -4,6 +4,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { Address } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { AsaStakingContractFactory } from '../artifacts/staking/ASAStakingContractClient'
+import { ROUNDS_PER_DAY } from './constants.algo'
 
 describe('Staking contract', () => {
   const localnet = algorandFixture()
@@ -45,7 +46,7 @@ describe('Staking contract', () => {
         asset: assetId,
         adminAddress: testAccount.addr.toString(),
         aprBasisPoints: 10000,
-        distributionPeriodSeconds: 60 * 60 * 24,
+        distributionPeriodSeconds: ROUNDS_PER_DAY.valueOf(),
         minimumStake: 1000,
       },
     })
@@ -53,7 +54,7 @@ describe('Staking contract', () => {
     expect(await client.state.global.asset()).toEqual(assetId)
     expect(await client.state.global.adminAddress()).toEqual(testAccount.addr.toString())
     expect(await client.state.global.aprBasisPoints()).toEqual(10000n)
-    expect(await client.state.global.distributionPeriodSeconds()).toEqual(86400n) // 60 * 60 * 24 = 1 day
+    expect(await client.state.global.distributionPeriodRounds()).toEqual(ROUNDS_PER_DAY.valueOf())
     expect(await client.state.global.minimumStake()).toEqual(1000n)
   })
 
