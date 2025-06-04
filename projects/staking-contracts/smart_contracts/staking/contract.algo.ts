@@ -60,7 +60,6 @@ export class ASAStakingContract extends Contract {
   // Constants for fixed reward system - now as GlobalState for flexibility
   public weeklyRewards = GlobalState<uint64>({ initialValue: 0 })
   public rewardPeriod = GlobalState<uint64>({ initialValue: 0 })
-  public precision = GlobalState<uint64>({ initialValue: 0 })
 
   public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
 
@@ -107,10 +106,9 @@ export class ASAStakingContract extends Contract {
       const rewardPerPeriod = this.weeklyRewards.value
       const totalRewards: uint64 = rewardPerPeriod * periodsPassed
       
-      // Avoid overflow by calculating: (totalRewards / totalStaked) * precision
+      // Simple division - rewards per token staked
       const totalStaked = this.totalStaked.value
-      const precision = this.precision.value
-      const rewardPerShare: uint64 = (totalRewards * precision) / totalStaked
+      const rewardPerShare: uint64 = totalRewards / totalStaked
       
       this.accumulatedRewardsPerShare.value = this.accumulatedRewardsPerShare.value + rewardPerShare
       
@@ -135,10 +133,9 @@ export class ASAStakingContract extends Contract {
     const userStake = stakeInfo.stakedAmount.native
     const accRewardsPerShare = this.accumulatedRewardsPerShare.value
     const userRewardDebt = stakeInfo.rewardDebt.native
-    const precision = this.precision.value
     
-    // Avoid overflow: calculate total earned carefully
-    const totalEarned: uint64 = (userStake * accRewardsPerShare) / precision
+    // Simple calculation without precision
+    const totalEarned: uint64 = userStake * accRewardsPerShare
     const pendingRewards: uint64 = totalEarned > userRewardDebt ? totalEarned - userRewardDebt : 0
     
     return pendingRewards
@@ -170,10 +167,9 @@ export class ASAStakingContract extends Contract {
     this.rewardPool.value = 0
     this.accumulatedRewardsPerShare.value = 0
     
-    // Set reward system parameters with defaults
+    // Set reward system parameters
     this.weeklyRewards.value = weeklyRewards
     this.rewardPeriod.value = rewardPeriod
-    this.precision.value = 1_000_000 // Reduced precision from 1e12 to 1e6 to avoid overflow
   }
 
   /**
@@ -217,9 +213,6 @@ export class ASAStakingContract extends Contract {
     assert(xferTxn.assetAmount > 0, 'Must stake non-zero amount')
     assert(xferTxn.xferAsset === asset, 'Incorrect asset ID')
 
-    // Update rewards before processing stake
-    this.updateRewards()
-
     // Get the stake amount from the transaction
     const stakeAmount = xferTxn.assetAmount
     const minimumStake = this.minimumStake.value
@@ -227,18 +220,6 @@ export class ASAStakingContract extends Contract {
 
     // Get the current user stake info
     const stakeInfo = this.getUserStakeInfo(senderAddress)
-
-    // Claim pending rewards if user has existing stake
-    if (stakeInfo.stakedAmount.native > 0) {
-      const pendingRewards = this.calculatePendingRewards(senderAddress)
-      if (pendingRewards > 0 && this.rewardPool.value >= pendingRewards) {
-        // Auto-compound rewards to stake
-        stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
-        stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
-        this.totalStaked.value = this.totalStaked.value + pendingRewards
-        this.rewardPool.value = this.rewardPool.value - pendingRewards
-      }
-    }
 
     // If this is a new stake, ensure it meets minimum
     if (stakeInfo.stakedAmount.native === 0) {
@@ -252,7 +233,7 @@ export class ASAStakingContract extends Contract {
     stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
     
     // Update reward debt
-    stakeInfo.rewardDebt = new arc4.UintN64((stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value) / this.precision.value)
+    stakeInfo.rewardDebt = new arc4.UintN64(stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value)
 
     // Store updated stake info
     this.storeUserStakeInfo(senderAddress, stakeInfo)
@@ -267,9 +248,6 @@ export class ASAStakingContract extends Contract {
    */
   @abimethod()
   public withdraw(amount: uint64): void {
-    // Update rewards before processing withdrawal
-    this.updateRewards()
-
     const senderAddress = Txn.sender
     const stakeInfo = this.getUserStakeInfo(senderAddress)
 
@@ -277,24 +255,6 @@ export class ASAStakingContract extends Contract {
     assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
     assert(amount <= stakeInfo.stakedAmount.native, 'Withdrawal amount exceeds stake')
     assert(amount > 0, 'Withdrawal amount must be positive')
-
-    // Claim pending rewards
-    const pendingRewards = this.calculatePendingRewards(senderAddress)
-    if (pendingRewards > 0 && this.rewardPool.value >= pendingRewards) {
-      stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
-      this.rewardPool.value = this.rewardPool.value - pendingRewards
-      
-      // Transfer rewards to user
-      const asset = this.asset.value
-      itxn
-        .assetTransfer({
-          assetReceiver: senderAddress,
-          assetAmount: pendingRewards,
-          xferAsset: asset,
-          fee: 1000,
-        })
-        .submit()
-    }
 
     // If withdrawing all, no need to check minimum remaining
     // If partial withdrawal, ensure remaining stake meets minimum
@@ -308,7 +268,7 @@ export class ASAStakingContract extends Contract {
     stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native - amount)
     
     // Update reward debt
-    stakeInfo.rewardDebt = new arc4.UintN64((stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value) / this.precision.value)
+    stakeInfo.rewardDebt = new arc4.UintN64(stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value)
 
     // Store updated stake info
     this.storeUserStakeInfo(senderAddress, stakeInfo)
@@ -322,47 +282,6 @@ export class ASAStakingContract extends Contract {
       .assetTransfer({
         assetReceiver: senderAddress,
         assetAmount: amount,
-        xferAsset: asset,
-        fee: 1000,
-      })
-      .submit()
-  }
-
-  /**
-   * Claim pending rewards without changing stake
-   */
-  @abimethod()
-  public claimRewards(): void {
-    // Update rewards before claiming
-    this.updateRewards()
-
-    const senderAddress = Txn.sender
-    const stakeInfo = this.getUserStakeInfo(senderAddress)
-
-    // Ensure user has stake
-    assert(stakeInfo.stakedAmount.native > 0, 'No stake found')
-
-    // Calculate pending rewards
-    const pendingRewards = this.calculatePendingRewards(senderAddress)
-    assert(pendingRewards > 0, 'No pending rewards')
-    assert(this.rewardPool.value >= pendingRewards, 'Insufficient reward pool')
-
-    // Update user stats
-    stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
-    stakeInfo.rewardDebt = new arc4.UintN64((stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value) / this.precision.value)
-
-    // Store updated stake info
-    this.storeUserStakeInfo(senderAddress, stakeInfo)
-
-    // Update reward pool
-    this.rewardPool.value = this.rewardPool.value - pendingRewards
-
-    // Transfer rewards to user
-    const asset = this.asset.value
-    itxn
-      .assetTransfer({
-        assetReceiver: senderAddress,
-        assetAmount: pendingRewards,
         xferAsset: asset,
         fee: 1000,
       })
@@ -410,7 +329,7 @@ export class ASAStakingContract extends Contract {
     const annualRewards: uint64 = 52 * this.weeklyRewards.value
     
     // APY = (annualRewards / totalStaked) * 10000 (in basis points)
-    const apy: uint64 = (annualRewards * 10000) / totalStaked
+    const apy: uint64 = (annualRewards * 100) / totalStaked
     
     return apy
   }

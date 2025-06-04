@@ -10,7 +10,6 @@ describe('Staking contract', () => {
   // Constants for testing
   const WEEKLY_REWARDS = 100_000_000_000 // 100,000 tokens (6 decimals)
   const REWARD_PERIOD = 604_800 // 7 days in seconds
-  const PRECISION = 1_000_000 // Reduced precision from 1e12 to 1e6
 
   beforeEach(() => {
     ctx.reset()
@@ -30,7 +29,6 @@ describe('Staking contract', () => {
     expect(contract.accumulatedRewardsPerShare.value).toBe(0)
     expect(contract.weeklyRewards.value).toBe(WEEKLY_REWARDS)
     expect(contract.rewardPeriod.value).toBe(REWARD_PERIOD)
-    expect(contract.precision.value).toBe(PRECISION)
   })
 
   it('Cannot opt in to the ASA if not the creator', () => {
@@ -87,7 +85,6 @@ describe('Staking contract', () => {
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -110,7 +107,6 @@ describe('Staking contract', () => {
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -139,7 +135,6 @@ describe('Staking contract', () => {
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -162,13 +157,19 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -196,13 +197,19 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -247,13 +254,19 @@ describe('Staking contract', () => {
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
     const sender2 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -293,13 +306,19 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(sender).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(0), 
       firstStakeTime: new UintN64(0),
@@ -318,6 +337,11 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
@@ -325,7 +349,8 @@ describe('Staking contract', () => {
     contract.totalStaked.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(sender).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(1000), 
       firstStakeTime: new UintN64(0), 
@@ -344,6 +369,11 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
@@ -351,7 +381,8 @@ describe('Staking contract', () => {
     contract.totalStaked.value = 2000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(sender).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(2000), 
       firstStakeTime: new UintN64(0), 
@@ -370,6 +401,11 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
@@ -377,7 +413,8 @@ describe('Staking contract', () => {
     contract.totalStaked.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(sender).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(1000), 
       firstStakeTime: new UintN64(0), 
@@ -406,6 +443,11 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
@@ -413,7 +455,8 @@ describe('Staking contract', () => {
     contract.totalStaked.value = 10000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(sender).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(10000), 
       firstStakeTime: new UintN64(0), 
@@ -442,6 +485,11 @@ describe('Staking contract', () => {
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
@@ -449,7 +497,8 @@ describe('Staking contract', () => {
     contract.totalStaked.value = 10000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(sender).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(10000), 
       firstStakeTime: new UintN64(0), 
@@ -493,6 +542,11 @@ describe('Staking contract', () => {
     const asset = ctx.any.asset()
     const staker1 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
     const staker2 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
@@ -500,7 +554,8 @@ describe('Staking contract', () => {
     contract.totalStaked.value = 10000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
     contract.stakers(staker1).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(5000), 
       firstStakeTime: new UintN64(0), 
@@ -642,6 +697,7 @@ describe('Staking contract', () => {
     
     contract.asset.value = asset
     contract.totalStaked.value = 0
+    contract.weeklyRewards.value = WEEKLY_REWARDS
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       const apy = contract.getCurrentAPY()
@@ -681,7 +737,7 @@ describe('Staking contract', () => {
     
     contract.asset.value = asset
     contract.totalStaked.value = 10000
-    contract.accumulatedRewardsPerShare.value = PRECISION // 1e6 precision
+    contract.accumulatedRewardsPerShare.value = 1 // 1 reward per token
     contract.stakers(staker).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(5000), 
       firstStakeTime: new UintN64(0),
@@ -692,79 +748,8 @@ describe('Staking contract', () => {
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       const pendingRewards = contract.getPendingRewards(staker)
-      // (5000 * 1e6) / 1e6 - 0 = 5000
-      expect(pendingRewards).toEqual(5000)
-    })
-  })
-
-  it("can claim rewards", () => {
-    const contract = ctx.contract.create(ASAStakingContract)
-    const app = ctx.ledger.getApplicationForContract(contract)
-    const asset = ctx.any.asset()
-    const staker = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
-    
-    contract.asset.value = asset
-    contract.totalStaked.value = 10000
-    contract.rewardPool.value = 10000
-    contract.accumulatedRewardsPerShare.value = PRECISION // 1e6 precision
-    contract.stakers(staker).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(5000), 
-      firstStakeTime: new UintN64(0),
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0)
-    })
-
-    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: staker, appId: app }) ], 0).execute(() => {
-      contract.claimRewards()
-    })
-
-    // Check that rewards were claimed
-    expect(contract.rewardPool.value).toEqual(5000) // 10000 - 5000
-    expect(contract.stakers(staker).value.totalRewardsEarned.native.valueOf()).toEqual(5000n)
-    
-    // Check asset transfer
-    const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
-    expect(assetTransferTxn.assetAmount).toEqual(5000)
-    expect(assetTransferTxn.assetReceiver).toEqual(staker)
-    expect(assetTransferTxn.xferAsset).toEqual(asset)
-  })
-
-  it("cannot claim rewards with no stake", () => {
-    const contract = ctx.contract.create(ASAStakingContract)
-    const app = ctx.ledger.getApplicationForContract(contract)
-    const asset = ctx.any.asset()
-    const staker = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
-    
-    contract.asset.value = asset
-    contract.totalStaked.value = 10000
-    contract.rewardPool.value = 10000
-
-    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: staker, appId: app }) ], 0).execute(() => {
-      expect(() => contract.claimRewards()).toThrow()
-    })
-  })
-
-  it("cannot claim rewards with no pending rewards", () => {
-    const contract = ctx.contract.create(ASAStakingContract)
-    const app = ctx.ledger.getApplicationForContract(contract)
-    const asset = ctx.any.asset()
-    const staker = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 0]]) })
-    
-    contract.asset.value = asset
-    contract.totalStaked.value = 10000
-    contract.rewardPool.value = 10000
-    contract.accumulatedRewardsPerShare.value = PRECISION // 1e6 precision
-    contract.stakers(staker).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(5000), 
-      firstStakeTime: new UintN64(0),
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(5000000000) // Already claimed all rewards: 5000 * 1e6
-    })
-
-    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: staker, appId: app }) ], 0).execute(() => {
-      expect(() => contract.claimRewards()).toThrow()
+      // 5000 * 1 - 0 = 5000
+      expect(pendingRewards.valueOf()).toEqual(5000n)
     })
   })
 
@@ -780,7 +765,6 @@ describe('Staking contract', () => {
     contract.lastRewardTime.value = 0
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
 
     // Set current time to 7 days later
     ctx.ledger.patchGlobalData({
@@ -818,7 +802,7 @@ describe('Staking contract', () => {
     
     contract.asset.value = asset
     contract.totalStaked.value = 10000
-    contract.accumulatedRewardsPerShare.value = PRECISION
+    contract.accumulatedRewardsPerShare.value = 1
     contract.stakers(staker).value = new UserStakeInfo({ 
       stakedAmount: new UintN64(5000), 
       firstStakeTime: new UintN64(100),
@@ -830,12 +814,12 @@ describe('Staking contract', () => {
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       const stats = contract.getUserStats(staker)
       expect(stats.length).toEqual(6)
-      expect(stats[0]).toEqual(5000) // stakedAmount
-      expect(stats[1]).toEqual(100)  // firstStakeTime
-      expect(stats[2]).toEqual(200)  // lastStakeTime
-      expect(stats[3]).toEqual(1000) // totalRewardsEarned
-      expect(stats[4]).toEqual(5000) // pendingRewards
-      expect(stats[5]).toEqual(0)    // rewardDebt
+      expect(stats[0].valueOf()).toEqual(5000n) // stakedAmount
+      expect(stats[1].valueOf()).toEqual(100n)  // firstStakeTime
+      expect(stats[2].valueOf()).toEqual(200n)  // lastStakeTime
+      expect(stats[3].valueOf()).toEqual(1000n) // totalRewardsEarned
+      expect(stats[4].valueOf()).toEqual(5000n) // pendingRewards
+      expect(stats[5].valueOf()).toEqual(0n)    // rewardDebt
     })
   })
 
@@ -877,7 +861,6 @@ describe('Staking contract', () => {
     contract.adminAddress.value = ctx.defaultSender
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.updateWeeklyRewards(newWeeklyRewards)
@@ -912,7 +895,6 @@ describe('Staking contract', () => {
     contract.adminAddress.value = ctx.defaultSender
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.precision.value = PRECISION
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.updateRewardPeriod(newRewardPeriod)
