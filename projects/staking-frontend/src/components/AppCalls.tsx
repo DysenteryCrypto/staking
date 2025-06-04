@@ -1,7 +1,7 @@
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
 import { useState } from 'react'
-import { StakingFactory } from '../contracts/Staking'
+import { AsaStakingContractFactory } from '../contracts/ASAStakingContract'
 import { OnSchemaBreak, OnUpdate } from '@algorandfoundation/algokit-utils/types/app'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
@@ -33,7 +33,7 @@ const AppCalls = ({ openModal, setModalState }: AppCallsInterface) => {
     // Instead, you would deploy your contract on your backend and reference it by id.
     // Given the simplicity of the starter contract, we are deploying it on the frontend
     // for demonstration purposes.
-    const factory = new StakingFactory({
+    const factory = new AsaStakingContractFactory({
       defaultSender: activeAddress ?? undefined,
       algorand,
     })
