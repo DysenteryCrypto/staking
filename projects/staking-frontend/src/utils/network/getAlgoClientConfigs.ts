@@ -41,8 +41,12 @@ export function getKmdConfigFromViteEnvironment(): AlgoViteKMDConfig {
 }
 
 export function getStakingConfigFromViteEnvironment(): StakingConfig {
+  if (!import.meta.env.VITE_STAKING_ASA_ID || !import.meta.env.VITE_STAKING_APP_ID) {
+    throw new Error('Attempt to get staking configuration without specifying STAKING_ASA_ID or STAKING_APP_ID in the environment variables')
+  }
+
   return {
-    asaId: import.meta.env.VITE_ASA_ID,
-    appId: import.meta.env.VITE_APP_ID,
+    asaId: import.meta.env.VITE_STAKING_ASA_ID,
+    appId: import.meta.env.VITE_STAKING_APP_ID,
   }
 }

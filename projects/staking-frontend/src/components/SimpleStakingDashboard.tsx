@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
-import { getAlgodConfigFromViteEnvironment, getStakingConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment, getStakingConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import Account from './Account'
 import { AsaStakingContractClient, AsaStakingContractFactory } from '../contracts/ASAStakingContract'
+import { ApplicationLookupResult } from '@algorandfoundation/algokit-utils/types/indexer'
+import { ApplicationResponse } from 'algosdk/dist/types/client/v2/indexer/models/types'
 
 const SimpleStakingDashboard: React.FC = () => {
   const { activeAddress, transactionSigner } = useWallet()
@@ -147,7 +149,8 @@ const SimpleStakingDashboard: React.FC = () => {
     if (!config.appId) return
 
     const algodConfig = getAlgodConfigFromViteEnvironment()
-    const algorand = AlgorandClient.fromConfig({ algodConfig })
+    const indexerConfig = getIndexerConfigFromViteEnvironment()
+    const algorand = AlgorandClient.fromConfig({ algodConfig, indexerConfig })
     const factory = algorand.client.getTypedAppFactory(AsaStakingContractFactory, {
       defaultSender: activeAddress ?? undefined,
     })
@@ -157,11 +160,48 @@ const SimpleStakingDashboard: React.FC = () => {
     setContractClient(contractClient)
   }
 
+  const loadContractStats = async () => {
+    if (!contractClient) return
+
+    const appInfo = (await contractClient.algorand.client.indexer.lookupApplications(contractClient.appId).do()) as ApplicationResponse
+
+    const globalState = appInfo.application?.params?.globalState
+    if (globalState) {
+      console.log('Global State:')
+      globalState.forEach((entry, index) => {
+        console.log(`Entry ${index}:`)
+
+        // Decode key
+        if (entry.key) {
+          const keyString = new TextDecoder().decode(new Uint8Array(entry.key))
+          console.log(`  Key: "${keyString}" (bytes: [${entry.key.join(',')}])`)
+        }
+
+        // Decode value
+        if (entry.value?.bytes) {
+          const valueString = new TextDecoder().decode(new Uint8Array(entry.value.bytes))
+          console.log(`  Value (bytes): "${valueString}" (bytes: [${entry.value.bytes.join(',')}])`)
+        }
+        if (entry.value?.uint) {
+          console.log(`  Value (uint): ${entry.value.uint}`)
+        }
+
+        console.log('---')
+      })
+    }
+  }
+
   // Load balance when inputs change
   useEffect(() => {
     loadUserBalance()
     createContractClient()
   }, [activeAddress, assetId])
+
+  useEffect(() => {
+    if (contractClient) {
+      loadContractStats()
+    }
+  }, [contractClient])
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
