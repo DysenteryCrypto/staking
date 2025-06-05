@@ -23,6 +23,16 @@ export async function deploy() {
     })
   }
 
+  await appClient.send.initialize({
+    args: {
+      asset: BigInt(1025),
+      adminAddress: deployer.addr.toString(),
+      minimumStake: 1000000000,
+      weeklyRewards: 1000000000,
+      rewardPeriod: 1000000000,
+    },
+  })
+
   /*
   const method = 'hello'
   const response = await appClient.send.hello({
