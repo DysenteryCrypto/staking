@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
-import { getAlgodConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import { getAlgodConfigFromViteEnvironment, getStakingConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import Account from './Account'
+import { AsaStakingContractClient, AsaStakingContractFactory } from '../contracts/ASAStakingContract'
 
 const SimpleStakingDashboard: React.FC = () => {
   const { activeAddress, transactionSigner } = useWallet()
@@ -19,6 +20,7 @@ const SimpleStakingDashboard: React.FC = () => {
   const [stakedAmount, setStakedAmount] = useState<bigint>(0n)
   const [pendingRewards, _setPendingRewards] = useState<bigint>(0n)
   const [currentAPY, _setCurrentAPY] = useState<bigint>(0n)
+  const [contractClient, setContractClient] = useState<AsaStakingContractClient | null>(null)
 
   // Load user balance
   const loadUserBalance = async () => {
@@ -140,9 +142,25 @@ const SimpleStakingDashboard: React.FC = () => {
     }
   }
 
+  const createContractClient = async () => {
+    const config = getStakingConfigFromViteEnvironment()
+    if (!config.appId) return
+
+    const algodConfig = getAlgodConfigFromViteEnvironment()
+    const algorand = AlgorandClient.fromConfig({ algodConfig })
+    const factory = algorand.client.getTypedAppFactory(AsaStakingContractFactory, {
+      defaultSender: activeAddress ?? undefined,
+    })
+
+    const contractClient = factory.getAppClientById({ appId: BigInt(config.appId) })
+
+    setContractClient(contractClient)
+  }
+
   // Load balance when inputs change
   useEffect(() => {
     loadUserBalance()
+    createContractClient()
   }, [activeAddress, assetId])
 
   return (
