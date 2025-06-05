@@ -17,8 +17,8 @@ const SimpleStakingDashboard: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [userBalance, setUserBalance] = useState<bigint>(0n)
   const [stakedAmount, setStakedAmount] = useState<bigint>(0n)
-  const [pendingRewards, setPendingRewards] = useState<bigint>(0n)
-  const [currentAPY, setCurrentAPY] = useState<bigint>(0n)
+  const [pendingRewards, _setPendingRewards] = useState<bigint>(0n)
+  const [currentAPY, _setCurrentAPY] = useState<bigint>(0n)
 
   // Load user balance
   const loadUserBalance = async () => {
@@ -29,7 +29,7 @@ const SimpleStakingDashboard: React.FC = () => {
       const algorand = AlgorandClient.fromConfig({ algodConfig })
 
       const accountInfo = await algorand.client.algod.accountInformation(activeAddress).do()
-      const assetHolding = accountInfo.assets?.find((asset: any) => asset['asset-id'] === parseInt(assetId))
+      const assetHolding = accountInfo.assets?.find((asset) => asset.assetId === BigInt(assetId))
 
       if (assetHolding) {
         setUserBalance(BigInt(assetHolding.amount))
@@ -37,7 +37,7 @@ const SimpleStakingDashboard: React.FC = () => {
         setUserBalance(0n)
       }
     } catch (error) {
-      console.error('Failed to load user balance:', error)
+      enqueueSnackbar('Failed to load your asset balance', { variant: 'error' })
     }
   }
 
@@ -73,7 +73,6 @@ const SimpleStakingDashboard: React.FC = () => {
       enqueueSnackbar('Successfully opted into asset!', { variant: 'success' })
       await loadUserBalance()
     } catch (error) {
-      console.error('Opt-in failed:', error)
       enqueueSnackbar('Failed to opt into asset', { variant: 'error' })
     } finally {
       setLoading(false)
@@ -106,7 +105,6 @@ const SimpleStakingDashboard: React.FC = () => {
       setStakedAmount((prev) => prev + amountToStake)
       setUserBalance((prev) => prev - amountToStake)
     } catch (error) {
-      console.error('Stake failed:', error)
       enqueueSnackbar('Stake transaction failed', { variant: 'error' })
     } finally {
       setLoading(false)
@@ -136,7 +134,6 @@ const SimpleStakingDashboard: React.FC = () => {
       setStakedAmount((prev) => prev - amountToWithdraw)
       setUserBalance((prev) => prev + amountToWithdraw)
     } catch (error) {
-      console.error('Withdraw failed:', error)
       enqueueSnackbar('Withdraw transaction failed', { variant: 'error' })
     } finally {
       setLoading(false)

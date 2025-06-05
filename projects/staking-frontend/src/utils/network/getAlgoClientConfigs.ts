@@ -1,4 +1,4 @@
-import { AlgoViteClientConfig, AlgoViteKMDConfig } from '../../interfaces/network'
+import { AlgoViteClientConfig, AlgoViteKMDConfig, StakingConfig } from '../../interfaces/network'
 
 export function getAlgodConfigFromViteEnvironment(): AlgoViteClientConfig {
   if (!import.meta.env.VITE_ALGOD_SERVER) {
@@ -37,5 +37,12 @@ export function getKmdConfigFromViteEnvironment(): AlgoViteKMDConfig {
     token: import.meta.env.VITE_KMD_TOKEN,
     wallet: import.meta.env.VITE_KMD_WALLET,
     password: import.meta.env.VITE_KMD_PASSWORD,
+  }
+}
+
+export function getStakingConfigFromViteEnvironment(): StakingConfig {
+  return {
+    asaId: import.meta.env.VITE_ASA_ID,
+    appId: import.meta.env.VITE_APP_ID,
   }
 }

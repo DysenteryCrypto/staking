@@ -24,3 +24,8 @@ export interface AlgoViteKMDConfig extends AlgoClientConfig {
   /** KMD wallet password */
   password: string
 }
+
+export interface StakingConfig {
+  asaId: number
+  appId: number
+}
