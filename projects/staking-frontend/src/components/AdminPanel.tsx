@@ -189,15 +189,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
 
   // Add rewards to pool (requires transferring tokens to contract first)
   const handleAddRewardsToPool = async () => {
-    if (!contractClient || !transactionSigner || !rewardPoolAmount || !appGlobalState) return
+    if (!contractClient || !transactionSigner || !rewardPoolAmount || !appGlobalState || !activeAddress) return
 
     try {
       setLoading(true)
-      BigInt(parseFloat(rewardPoolAmount) * 1e6)
+      const amount = BigInt(parseFloat(rewardPoolAmount) * 1e6)
 
-      // This would require creating a transaction group with asset transfer + app call
-      // For now, we'll show a placeholder message
-      enqueueSnackbar('Add rewards feature requires transaction group implementation', { variant: 'info' })
+      const txn = await contractClient.algorand.createTransaction.assetTransfer({
+        amount,
+        sender: activeAddress,
+        receiver: contractClient.appAddress,
+        assetId: appGlobalState.asset,
+      })
+
+      await contractClient.newGroup().addTransaction(txn).addRewards().send()
+
+      enqueueSnackbar('Rewards sent to reward pool!', { variant: 'success' })
       setRewardPoolAmount('')
     } catch (error) {
       enqueueSnackbar('Failed to add rewards to pool', { variant: 'error' })
