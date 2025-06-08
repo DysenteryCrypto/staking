@@ -33,6 +33,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
   const [emergencyWithdrawAmount, setEmergencyWithdrawAmount] = useState('')
   const [newWeeklyRewards, setNewWeeklyRewards] = useState('')
   const [newRewardPeriod, setNewRewardPeriod] = useState('')
+  const [rewardPeriodUnit, setRewardPeriodUnit] = useState('days')
   const [rewardPoolAmount, setRewardPoolAmount] = useState('')
 
   // Format token amounts
@@ -164,13 +165,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
     }
   }
 
+  // Convert time period to seconds based on unit
+  const convertToSeconds = (value: string, unit: string): bigint => {
+    const numValue = parseFloat(value)
+    const multipliers = {
+      minutes: 60,
+      hours: 3600,
+      days: 86400,
+      weeks: 604800,
+    }
+    return BigInt(Math.floor(numValue * multipliers[unit as keyof typeof multipliers]))
+  }
+
+  // Validate minimum period (1 minute = 60 seconds)
+  const isValidPeriod = (value: string, unit: string): boolean => {
+    if (!value || isNaN(parseFloat(value)) || parseFloat(value) <= 0) return false
+    const seconds = convertToSeconds(value, unit)
+    return seconds >= 60n // Minimum 1 minute
+  }
+
   // Update reward period
   const handleUpdateRewardPeriod = async () => {
     if (!contractClient || !transactionSigner || !newRewardPeriod || !activeAddress) return
 
+    if (!isValidPeriod(newRewardPeriod, rewardPeriodUnit)) {
+      enqueueSnackbar('Reward period must be at least 1 minute', { variant: 'error' })
+      return
+    }
+
     try {
       setLoading(true)
-      const rewardPeriod = BigInt(parseInt(newRewardPeriod) * 86400) // Convert days to seconds
+      const rewardPeriod = convertToSeconds(newRewardPeriod, rewardPeriodUnit)
 
       await contractClient.send.updateRewardPeriod({
         args: { newRewardPeriod: rewardPeriod },
@@ -376,19 +401,91 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
             </div>
 
             <div>
-              <label className="text-sm text-yellow-500 uppercase block mb-2">Reward Period (Days)</label>
-              <input
-                type="number"
-                className="w-full bg-yellow-950/80 border-2 border-yellow-500 text-yellow-500 p-2 font-mono rounded-sm focus:outline-none focus:border-yellow-400 placeholder:text-yellow-500/50"
-                placeholder="Enter period in days"
-                value={newRewardPeriod}
-                onChange={(e) => setNewRewardPeriod(e.target.value)}
-                min="1"
-              />
+              <label className="text-sm text-yellow-500 uppercase block mb-2">Reward Period (Min: 1 minute)</label>
+              <div className="flex space-x-2 mb-2">
+                <input
+                  type="number"
+                  className="flex-1 bg-yellow-950/80 border-2 border-yellow-500 text-yellow-500 p-2 font-mono rounded-sm focus:outline-none focus:border-yellow-400 placeholder:text-yellow-500/50"
+                  placeholder="Enter period"
+                  value={newRewardPeriod}
+                  onChange={(e) => setNewRewardPeriod(e.target.value)}
+                  min="0.01"
+                  step="0.01"
+                />
+                <select
+                  className="bg-yellow-950/80 border-2 border-yellow-500 text-yellow-500 p-2 font-mono rounded-sm focus:outline-none focus:border-yellow-400"
+                  value={rewardPeriodUnit}
+                  onChange={(e) => setRewardPeriodUnit(e.target.value)}
+                >
+                  <option value="minutes">MINUTES</option>
+                  <option value="hours">HOURS</option>
+                  <option value="days">DAYS</option>
+                  <option value="weeks">WEEKS</option>
+                </select>
+              </div>
+              <div className="flex flex-wrap gap-1 mb-2">
+                <button
+                  type="button"
+                  className="text-xs bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-2 py-1 font-mono rounded-sm hover:bg-yellow-500/20 transition-colors"
+                  onClick={() => {
+                    setNewRewardPeriod('5')
+                    setRewardPeriodUnit('minutes')
+                  }}
+                >
+                  5MIN
+                </button>
+                <button
+                  type="button"
+                  className="text-xs bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-2 py-1 font-mono rounded-sm hover:bg-yellow-500/20 transition-colors"
+                  onClick={() => {
+                    setNewRewardPeriod('1')
+                    setRewardPeriodUnit('hours')
+                  }}
+                >
+                  1HR
+                </button>
+                <button
+                  type="button"
+                  className="text-xs bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-2 py-1 font-mono rounded-sm hover:bg-yellow-500/20 transition-colors"
+                  onClick={() => {
+                    setNewRewardPeriod('1')
+                    setRewardPeriodUnit('days')
+                  }}
+                >
+                  1DAY
+                </button>
+                <button
+                  type="button"
+                  className="text-xs bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-2 py-1 font-mono rounded-sm hover:bg-yellow-500/20 transition-colors"
+                  onClick={() => {
+                    setNewRewardPeriod('1')
+                    setRewardPeriodUnit('weeks')
+                  }}
+                >
+                  1WK
+                </button>
+                <button
+                  type="button"
+                  className="text-xs bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-2 py-1 font-mono rounded-sm hover:bg-yellow-500/20 transition-colors"
+                  onClick={() => {
+                    setNewRewardPeriod('30')
+                    setRewardPeriodUnit('days')
+                  }}
+                >
+                  30DAYS
+                </button>
+              </div>
+              {newRewardPeriod && (
+                <div className="text-xs text-yellow-400 mb-2">
+                  {isValidPeriod(newRewardPeriod, rewardPeriodUnit)
+                    ? `✓ Valid period: ${formatPeriod(convertToSeconds(newRewardPeriod, rewardPeriodUnit))}`
+                    : '⚠️ Period must be at least 1 minute'}
+                </div>
+              )}
               <button
-                className={`w-full mt-2 bg-yellow-500/10 border-2 border-yellow-500 text-yellow-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading || parentLoading ? 'crt-pulse' : ''}`}
+                className={`w-full bg-yellow-500/10 border-2 border-yellow-500 text-yellow-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading || parentLoading ? 'crt-pulse' : ''}`}
                 onClick={handleUpdateRewardPeriod}
-                disabled={loading || parentLoading || !newRewardPeriod}
+                disabled={loading || parentLoading || !newRewardPeriod || !isValidPeriod(newRewardPeriod, rewardPeriodUnit)}
               >
                 {loading ? 'UPDATING...' : 'UPDATE REWARD PERIOD'}
               </button>
