@@ -9,6 +9,7 @@ import {
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import Account from './Account'
 import AppGlobalStateDisplay from './AppGlobalState'
+import AdminPanel from './AdminPanel'
 import { AsaStakingContractClient, AsaStakingContractFactory } from '../contracts/ASAStakingContract'
 import { ApplicationResponse } from 'algosdk/dist/types/client/v2/indexer/models/types'
 import { Address } from 'algosdk'
@@ -402,6 +403,17 @@ const SimpleStakingDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Admin Panel */}
+          <AdminPanel
+            contractClient={contractClient}
+            appGlobalState={appGlobalState}
+            loading={loading}
+            onStateUpdate={() => {
+              loadUserBalance()
+              loadContractStats()
+            }}
+          />
 
           {/* Instructions */}
           <div className="bg-amber-500/10 border-2 border-amber-500 rounded-md p-4">
