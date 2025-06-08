@@ -25,11 +25,11 @@ export async function deploy() {
 
   await appClient.send.initialize({
     args: {
-      asset: BigInt(1025),
+      asset: BigInt(1001),
       adminAddress: deployer.addr.toString(),
-      minimumStake: 1000000000,
-      weeklyRewards: 1000000000,
-      rewardPeriod: 1000000000,
+      minimumStake: 1000_000_000, // 1,000
+      weeklyRewards: 100_000_000_000_000, // 100,000,000
+      rewardPeriod: 300, // 5 minutes
     },
   })
 

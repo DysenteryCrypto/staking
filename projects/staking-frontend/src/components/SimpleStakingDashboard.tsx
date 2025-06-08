@@ -1,21 +1,37 @@
 import React, { useState, useEffect } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
-import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment, getStakingConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import {
+  getAlgodConfigFromViteEnvironment,
+  getIndexerConfigFromViteEnvironment,
+  getStakingConfigFromViteEnvironment,
+} from '../utils/network/getAlgoClientConfigs'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import Account from './Account'
+import AppGlobalStateDisplay from './AppGlobalState'
 import { AsaStakingContractClient, AsaStakingContractFactory } from '../contracts/ASAStakingContract'
-import { ApplicationLookupResult } from '@algorandfoundation/algokit-utils/types/indexer'
 import { ApplicationResponse } from 'algosdk/dist/types/client/v2/indexer/models/types'
+import { Address } from 'algosdk'
+
+type AppGlobalState = {
+  rewardPool: bigint
+  accumulatedRewardsPerShare: bigint
+  adminAddress: string
+  lastRewardTime: bigint
+  asset: bigint
+  minimumStake: bigint
+  rewardPeriod: bigint
+  totalStaked: bigint
+  weeklyRewards: bigint
+}
 
 const SimpleStakingDashboard: React.FC = () => {
   const { activeAddress, transactionSigner } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
+  const config = getStakingConfigFromViteEnvironment()
 
   // State management
   const [loading, setLoading] = useState(false)
-  const [appId, setAppId] = useState('')
-  const [assetId, setAssetId] = useState('')
   const [stakeAmount, setStakeAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [userBalance, setUserBalance] = useState<bigint>(0n)
@@ -23,17 +39,18 @@ const SimpleStakingDashboard: React.FC = () => {
   const [pendingRewards, _setPendingRewards] = useState<bigint>(0n)
   const [currentAPY, _setCurrentAPY] = useState<bigint>(0n)
   const [contractClient, setContractClient] = useState<AsaStakingContractClient | null>(null)
+  const [appGlobalState, setAppGlobalState] = useState<AppGlobalState | null>(null)
 
   // Load user balance
   const loadUserBalance = async () => {
-    if (!activeAddress || !assetId) return
+    if (!activeAddress) return
 
     try {
       const algodConfig = getAlgodConfigFromViteEnvironment()
       const algorand = AlgorandClient.fromConfig({ algodConfig })
 
       const accountInfo = await algorand.client.algod.accountInformation(activeAddress).do()
-      const assetHolding = accountInfo.assets?.find((asset) => asset.assetId === BigInt(assetId))
+      const assetHolding = accountInfo.assets?.find((asset) => asset.assetId === BigInt(config.asaId))
 
       if (assetHolding) {
         setUserBalance(BigInt(assetHolding.amount))
@@ -60,7 +77,7 @@ const SimpleStakingDashboard: React.FC = () => {
 
   // Opt into asset
   const handleOptInToAsset = async () => {
-    if (!activeAddress || !assetId || !transactionSigner) return
+    if (!activeAddress || !transactionSigner) return
 
     try {
       setLoading(true)
@@ -71,7 +88,7 @@ const SimpleStakingDashboard: React.FC = () => {
         sender: activeAddress,
         receiver: activeAddress,
         amount: 0n,
-        assetId: BigInt(assetId),
+        assetId: BigInt(config.asaId),
       })
 
       enqueueSnackbar('Successfully opted into asset!', { variant: 'success' })
@@ -85,7 +102,7 @@ const SimpleStakingDashboard: React.FC = () => {
 
   // Simple stake function (placeholder - you'll need to implement contract calls)
   const handleStake = async () => {
-    if (!activeAddress || !stakeAmount || !assetId || !appId) return
+    if (!activeAddress || !stakeAmount || !config.appId || !config.asaId) return
 
     try {
       setLoading(true)
@@ -117,7 +134,7 @@ const SimpleStakingDashboard: React.FC = () => {
 
   // Simple withdraw function (placeholder)
   const handleWithdraw = async () => {
-    if (!activeAddress || !withdrawAmount || !appId) return
+    if (!activeAddress || !withdrawAmount || !config.appId) return
 
     try {
       setLoading(true)
@@ -167,27 +184,32 @@ const SimpleStakingDashboard: React.FC = () => {
 
     const globalState = appInfo.application?.params?.globalState
     if (globalState) {
-      console.log('Global State:')
-      globalState.forEach((entry, index) => {
-        console.log(`Entry ${index}:`)
+      const state: AppGlobalState = {
+        rewardPool: 0n,
+        accumulatedRewardsPerShare: 0n,
+        adminAddress: '',
+        lastRewardTime: 0n,
+        asset: 0n,
+        minimumStake: 0n,
+        rewardPeriod: 0n,
+        totalStaked: 0n,
+        weeklyRewards: 0n,
+      }
 
-        // Decode key
+      globalState.forEach((entry) => {
         if (entry.key) {
           const keyString = new TextDecoder().decode(new Uint8Array(entry.key))
-          console.log(`  Key: "${keyString}" (bytes: [${entry.key.join(',')}])`)
-        }
 
-        // Decode value
-        if (entry.value?.bytes) {
-          const valueString = new TextDecoder().decode(new Uint8Array(entry.value.bytes))
-          console.log(`  Value (bytes): "${valueString}" (bytes: [${entry.value.bytes.join(',')}])`)
+          if (keyString === 'adminAddress') {
+            const addr = new Address(entry.value?.bytes)
+            state.adminAddress = addr.toString()
+          } else {
+            state[keyString as Exclude<keyof AppGlobalState, 'adminAddress'>] = entry.value?.uint ?? 0n
+          }
         }
-        if (entry.value?.uint) {
-          console.log(`  Value (uint): ${entry.value.uint}`)
-        }
-
-        console.log('---')
       })
+
+      setAppGlobalState(state)
     }
   }
 
@@ -195,7 +217,7 @@ const SimpleStakingDashboard: React.FC = () => {
   useEffect(() => {
     loadUserBalance()
     createContractClient()
-  }, [activeAddress, assetId])
+  }, [activeAddress, config.asaId])
 
   useEffect(() => {
     if (contractClient) {
@@ -204,193 +226,216 @@ const SimpleStakingDashboard: React.FC = () => {
   }, [contractClient])
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-bold text-gray-800">Staking Dashboard</h2>
-          <Account />
-        </div>
-      </div>
+    <div className="min-h-screen bg-black font-mono relative overflow-x-hidden">
+      {/* Custom CSS for animations and effects */}
+      <style>{`
+        @keyframes flicker {
+          0% { opacity: 1; }
+          100% { opacity: 0.96; }
+        }
+        @keyframes pulse-fade {
+          0% { opacity: 1; }
+          50% { opacity: 0.7; }
+          100% { opacity: 1; }
+        }
+        .crt-flicker { animation: flicker 0.15s infinite linear alternate; }
+        .crt-pulse { animation: pulse-fade 1s infinite; }
+        .crt-scanlines {
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 255, 0, 0.03) 2px,
+            rgba(0, 255, 0, 0.03) 4px
+          );
+        }
+      `}</style>
 
-      {/* Contract Configuration */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold mb-4">Connect to Staking Contract</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="label">
-              <span className="label-text">App ID</span>
-            </label>
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              placeholder="Enter staking contract App ID"
-              value={appId}
-              onChange={(e) => setAppId(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="label">
-              <span className="label-text">Asset ID</span>
-            </label>
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              placeholder="Enter ASA token ID"
-              value={assetId}
-              onChange={(e) => setAssetId(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+      <div className="bg-gray-800 border-[20px] border-gray-700 rounded-2xl shadow-lg relative m-5 p-5 min-h-[calc(100vh-2.5rem)]">
+        {/* Scanlines overlay */}
+        <div className="absolute inset-0 crt-scanlines pointer-events-none z-10" />
 
-      {/* User Balance */}
-      {assetId && (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-600">Your Token Balance</h3>
-              <p className="text-2xl font-bold text-blue-600">{formatToken(userBalance)}</p>
+        {/* Screen flicker overlay */}
+        <div className="absolute inset-0 bg-green-500/[0.02] crt-flicker pointer-events-none z-10" />
+
+        <div className="space-y-6 relative z-20">
+          {/* Header */}
+          <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+            <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+            <div className="flex justify-between items-center">
+              <h2 className="text-3xl font-bold text-green-500 uppercase">STAKING TERMINAL v2.0</h2>
+              <Account />
             </div>
-            {userBalance === 0n && (
-              <button className={`btn btn-secondary ${loading ? 'loading' : ''}`} onClick={handleOptInToAsset} disabled={loading}>
-                Opt Into Asset
-              </button>
-            )}
           </div>
-        </div>
-      )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">Your Staked</h3>
-          <p className="text-3xl font-bold text-blue-600">{formatToken(stakedAmount)}</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">Pending Rewards</h3>
-          <p className="text-3xl font-bold text-green-600">{formatToken(pendingRewards)}</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">Total Balance</h3>
-          <p className="text-3xl font-bold text-purple-600">{formatToken(userBalance + stakedAmount)}</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">Current APY</h3>
-          <p className="text-3xl font-bold text-orange-600">{formatAPY(currentAPY)}</p>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stake */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Stake Tokens</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="label">
-                <span className="label-text">Amount to Stake</span>
-                <span className="label-text-alt">Balance: {formatToken(userBalance)}</span>
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  className="input input-bordered flex-1"
-                  placeholder="Enter amount"
-                  value={stakeAmount}
-                  onChange={(e) => setStakeAmount(e.target.value)}
-                  step="0.000001"
-                  min="0"
-                />
-                <button className="btn btn-outline" onClick={() => setStakeAmount(formatToken(userBalance))} disabled={userBalance === 0n}>
-                  MAX
-                </button>
+          {/* User Balance */}
+          {config.asaId && (
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg text-white uppercase">YOUR $DOD BALANCE</h3>
+                  <p className="text-2xl font-bold text-cyan-400">{formatToken(userBalance)}</p>
+                </div>
+                {userBalance === 0n && (
+                  <button
+                    className={`bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'crt-pulse' : ''}`}
+                    onClick={handleOptInToAsset}
+                    disabled={loading}
+                  >
+                    {loading ? 'PROCESSING...' : 'OPT INTO ASSET'}
+                  </button>
+                )}
               </div>
             </div>
-            <button
-              className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}
-              onClick={handleStake}
-              disabled={loading || !stakeAmount || userBalance === 0n || !appId}
-            >
-              {loading ? 'Staking...' : 'Stake'}
-            </button>
-            <div className="text-sm text-yellow-600">
-              Note: Contract integration is a placeholder. Implement actual contract calls for production use.
+          )}
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <h3 className="text-lg text-white uppercase mb-2">YOUR STAKED $DOD</h3>
+              <p className="text-2xl font-bold text-cyan-400">{formatToken(stakedAmount)}</p>
+            </div>
+
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <h3 className="text-lg text-white uppercase mb-2">PENDING REWARDS</h3>
+              <p className="text-2xl font-bold text-green-500">{formatToken(pendingRewards)}</p>
+            </div>
+
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <h3 className="text-lg text-white uppercase mb-2">TOTAL BALANCE</h3>
+              <p className="text-2xl font-bold text-amber-500">{formatToken(userBalance + stakedAmount)}</p>
+            </div>
+
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <h3 className="text-lg text-white uppercase mb-2">CURRENT APY</h3>
+              <p className="text-2xl font-bold text-amber-500">{formatAPY(currentAPY)}</p>
             </div>
           </div>
-        </div>
 
-        {/* Withdraw */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Withdraw Tokens</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="label">
-                <span className="label-text">Amount to Withdraw</span>
-                <span className="label-text-alt">Staked: {formatToken(stakedAmount)}</span>
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  className="input input-bordered flex-1"
-                  placeholder="Enter amount"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  step="0.000001"
-                  min="0"
-                />
+          {/* Global State Display */}
+          <AppGlobalStateDisplay globalState={appGlobalState} loading={loading} />
+
+          {/* Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Stake */}
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <h3 className="text-xl text-green-500 uppercase mb-4">STAKE $DOD</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-green-500 uppercase">AMOUNT TO STAKE</span>
+                    <span className="text-sm text-amber-500 uppercase">BALANCE: {formatToken(userBalance)}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      className="flex-1 bg-green-950/80 border-2 border-green-500 text-green-500 p-2 font-mono rounded-sm focus:outline-none focus:border-green-400 placeholder:text-green-500/50"
+                      placeholder="Enter amount"
+                      value={stakeAmount}
+                      onChange={(e) => setStakeAmount(e.target.value)}
+                      step="0.000001"
+                      min="0"
+                    />
+                    <button
+                      className="bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setStakeAmount(formatToken(userBalance))}
+                      disabled={userBalance === 0n}
+                    >
+                      MAX
+                    </button>
+                  </div>
+                </div>
                 <button
-                  className="btn btn-outline"
-                  onClick={() => setWithdrawAmount(formatToken(stakedAmount))}
-                  disabled={stakedAmount === 0n}
+                  className={`w-full bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'crt-pulse' : ''}`}
+                  onClick={handleStake}
+                  disabled={loading || !stakeAmount || userBalance === 0n || !config.appId}
                 >
-                  MAX
+                  {loading ? 'STAKING...' : 'STAKE'}
                 </button>
+                <div className="text-sm text-amber-500">NOTE: CONTRACT INTEGRATION IS PLACEHOLDER. IMPLEMENT ACTUAL CONTRACT CALLS.</div>
               </div>
             </div>
-            <button
-              className={`btn btn-secondary w-full ${loading ? 'loading' : ''}`}
-              onClick={handleWithdraw}
-              disabled={loading || !withdrawAmount || stakedAmount === 0n || !appId}
-            >
-              {loading ? 'Withdrawing...' : 'Withdraw'}
-            </button>
-            <div className="text-sm text-yellow-600">
-              Note: Contract integration is a placeholder. Implement actual contract calls for production use.
+
+            {/* Withdraw */}
+            <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">
+              <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
+              <h3 className="text-xl text-green-500 uppercase mb-4">WITHDRAW $DOD</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-green-500 uppercase">AMOUNT TO WITHDRAW</span>
+                    <span className="text-sm text-amber-500 uppercase">STAKED: {formatToken(stakedAmount)}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      className="flex-1 bg-green-950/80 border-2 border-green-500 text-green-500 p-2 font-mono rounded-sm focus:outline-none focus:border-green-400 placeholder:text-green-500/50"
+                      placeholder="Enter amount"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      step="0.000001"
+                      min="0"
+                    />
+                    <button
+                      className="bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setWithdrawAmount(formatToken(stakedAmount))}
+                      disabled={stakedAmount === 0n}
+                    >
+                      MAX
+                    </button>
+                  </div>
+                </div>
+                <button
+                  className={`w-full bg-amber-500/10 border-2 border-amber-500 text-amber-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-amber-500/20 hover:border-amber-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'crt-pulse' : ''}`}
+                  onClick={handleWithdraw}
+                  disabled={loading || !withdrawAmount || stakedAmount === 0n || !config.appId}
+                >
+                  {loading ? 'WITHDRAWING...' : 'WITHDRAW'}
+                </button>
+                <div className="text-sm text-amber-500">NOTE: CONTRACT INTEGRATION IS PLACEHOLDER. IMPLEMENT ACTUAL CONTRACT CALLS.</div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Instructions */}
-      <div className="bg-blue-50 rounded-lg shadow-lg p-6 border-2 border-blue-200">
-        <h3 className="text-xl font-semibold text-blue-800 mb-4">Integration Instructions</h3>
-        <div className="text-blue-700 space-y-2">
-          <p>
-            <strong>This is a template implementation.</strong> To complete the integration:
-          </p>
-          <ol className="list-decimal list-inside space-y-1 ml-4">
-            <li>Import your generated ASA staking contract client</li>
-            <li>Initialize the contract client with the App ID</li>
-            <li>Implement proper transaction groups for staking (asset transfer + contract call)</li>
-            <li>Add contract method calls for getUserStats, getPendingRewards, etc.</li>
-            <li>Handle transaction signing and submission</li>
-            <li>Add error handling and transaction confirmation</li>
-          </ol>
-          <p className="mt-4">
-            Refer to the <code>ASAStakingContract.ts</code> file for available methods and the README for detailed integration steps.
-          </p>
-        </div>
-      </div>
+          {/* Instructions */}
+          <div className="bg-amber-500/10 border-2 border-amber-500 rounded-md p-4">
+            <h3 className="text-xl text-amber-500 uppercase mb-4">INTEGRATION INSTRUCTIONS</h3>
+            <div className="text-amber-500 space-y-2">
+              <p>
+                <strong>THIS IS A TEMPLATE IMPLEMENTATION.</strong> TO COMPLETE THE INTEGRATION:
+              </p>
+              <ol className="list-decimal list-inside space-y-1 ml-4">
+                <li>IMPORT YOUR GENERATED ASA STAKING CONTRACT CLIENT</li>
+                <li>INITIALIZE THE CONTRACT CLIENT WITH THE APP ID</li>
+                <li>IMPLEMENT PROPER TRANSACTION GROUPS FOR STAKING (ASSET TRANSFER + CONTRACT CALL)</li>
+                <li>ADD CONTRACT METHOD CALLS FOR GETUSERSTATS, GETPENDINGREWARDS, ETC.</li>
+                <li>HANDLE TRANSACTION SIGNING AND SUBMISSION</li>
+                <li>ADD ERROR HANDLING AND TRANSACTION CONFIRMATION</li>
+              </ol>
+              <p className="mt-4">
+                REFER TO THE <code className="bg-amber-500/20 px-1 rounded">ASAStakingContract.ts</code> FILE FOR AVAILABLE METHODS AND THE
+                README FOR DETAILED INTEGRATION STEPS.
+              </p>
+            </div>
+          </div>
 
-      {/* Refresh Button */}
-      <div className="text-center">
-        <button className={`btn btn-outline ${loading ? 'loading' : ''}`} onClick={loadUserBalance} disabled={loading}>
-          {loading ? 'Loading...' : 'Refresh Balance'}
-        </button>
+          {/* Refresh Button */}
+          <div className="text-center">
+            <button
+              className={`bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'crt-pulse' : ''}`}
+              onClick={loadUserBalance}
+              disabled={loading}
+            >
+              {loading ? 'LOADING...' : 'REFRESH BALANCE'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
