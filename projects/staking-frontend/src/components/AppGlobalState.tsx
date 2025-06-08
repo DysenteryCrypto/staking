@@ -45,12 +45,6 @@ const AppGlobalStateDisplay: React.FC<AppGlobalStateProps> = ({ globalState, loa
     return `${minutes}m`
   }
 
-  // Format address (truncate for display)
-  const formatAddress = (address: string): string => {
-    if (!address) return 'N/A'
-    return `${address.slice(0, 8)}...${address.slice(-8)}`
-  }
-
   if (loading) {
     return (
       <div className="bg-green-900/80 border-2 border-green-500 rounded-md p-4 relative">

@@ -2,8 +2,7 @@ import React, { useState } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
 import { AsaStakingContractClient } from '../contracts/ASAStakingContract'
-import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
-import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
 
 type AppGlobalState = {
   rewardPool: bigint
@@ -27,14 +26,6 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState, loading: parentLoading, onStateUpdate }) => {
   const { activeAddress, transactionSigner } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
-
-  const algodConfig = getAlgodConfigFromViteEnvironment()
-  const indexerConfig = getIndexerConfigFromViteEnvironment()
-  const algorand = AlgorandClient.fromConfig({
-    algodConfig,
-    indexerConfig,
-  })
-  algorand.setDefaultSigner(transactionSigner)
 
   // Local state for admin actions
   const [loading, setLoading] = useState(false)
@@ -76,6 +67,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
       await contractClient.send.optInToAsset({
         args: [],
         sender: activeAddress,
+        staticFee: AlgoAmount.MicroAlgos(2000),
       })
       enqueueSnackbar('Successfully opted contract into asset!', { variant: 'success' })
       onStateUpdate()

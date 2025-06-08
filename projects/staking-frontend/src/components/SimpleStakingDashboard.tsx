@@ -169,6 +169,7 @@ const SimpleStakingDashboard: React.FC = () => {
     const algodConfig = getAlgodConfigFromViteEnvironment()
     const indexerConfig = getIndexerConfigFromViteEnvironment()
     const algorand = AlgorandClient.fromConfig({ algodConfig, indexerConfig })
+    algorand.setDefaultSigner(transactionSigner)
     const factory = algorand.client.getTypedAppFactory(AsaStakingContractFactory, {
       defaultSender: activeAddress ?? undefined,
     })
