@@ -139,7 +139,7 @@ const SimpleStakingDashboard: React.FC = () => {
 
   // Simple withdraw function (placeholder)
   const handleWithdraw = async () => {
-    if (!activeAddress || !withdrawAmount || !config.appId) return
+    if (!activeAddress || !withdrawAmount || !config.appId || !contractClient || !appGlobalState) return
 
     try {
       setLoading(true)
@@ -151,9 +151,10 @@ const SimpleStakingDashboard: React.FC = () => {
         return
       }
 
-      // TODO: Implement actual contract interaction
+      await contractClient.send.withdraw({
+        args: [amountToWithdraw],
+      })
 
-      enqueueSnackbar('Withdraw transaction successful! (Placeholder)', { variant: 'success' })
       setWithdrawAmount('')
 
       // Update mock values
@@ -399,7 +400,7 @@ const SimpleStakingDashboard: React.FC = () => {
                     />
                     <button
                       className="bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => setStakeAmount(formatToken(userBalance))}
+                      onClick={() => setStakeAmount((Number(userBalance) / 1e6).toFixed(6))}
                       disabled={userBalance === 0n}
                     >
                       MAX
@@ -413,7 +414,6 @@ const SimpleStakingDashboard: React.FC = () => {
                 >
                   {loading ? 'STAKING...' : 'STAKE'}
                 </button>
-                <div className="text-sm text-amber-500">NOTE: CONTRACT INTEGRATION IS PLACEHOLDER. IMPLEMENT ACTUAL CONTRACT CALLS.</div>
               </div>
             </div>
 
@@ -439,7 +439,7 @@ const SimpleStakingDashboard: React.FC = () => {
                     />
                     <button
                       className="bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => setWithdrawAmount(formatToken(stakedAmount))}
+                      onClick={() => setWithdrawAmount((Number(stakedAmount) / 1e6).toFixed(6))}
                       disabled={stakedAmount === 0n}
                     >
                       MAX

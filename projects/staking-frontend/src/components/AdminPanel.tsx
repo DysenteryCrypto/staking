@@ -494,12 +494,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
         </div>
       </div>
 
-      {/* Add Rewards to Pool (Placeholder) */}
+      {/* Add Rewards to Pool */}
       <div className="bg-cyan-900/80 border-2 border-cyan-500 rounded-md p-4 relative">
         <div className="absolute inset-1 border border-cyan-500/30 rounded-sm pointer-events-none" />
         <h3 className="text-xl text-cyan-500 uppercase mb-4">ADD REWARDS TO POOL</h3>
         <div className="space-y-4">
-          <p className="text-cyan-400 text-sm">Note: This requires implementing a transaction group with asset transfer + contract call.</p>
           <div className="flex space-x-2">
             <input
               type="number"
@@ -515,7 +514,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ contractClient, appGlobalState,
               onClick={handleAddRewardsToPool}
               disabled={loading || parentLoading || !rewardPoolAmount}
             >
-              {loading ? 'ADDING...' : 'ADD REWARDS (PLACEHOLDER)'}
+              {loading ? 'ADDING...' : 'ADD REWARDS'}
             </button>
           </div>
         </div>
