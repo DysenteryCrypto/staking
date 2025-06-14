@@ -13,14 +13,16 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
 
   return (
     <dialog id="connect_wallet_modal" className={`modal ${openModal ? 'modal-open' : ''}`}>
-      <form method="dialog" className="modal-box">
-        <h3 className="font-bold text-2xl">Select wallet provider</h3>
+      <form method="dialog" className="modal-box bg-black border-2 border-green-500 rounded-md p-6 relative">
+        <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
 
-        <div className="grid m-2 pt-5">
+        <h3 className="font-bold text-2xl text-green-500 uppercase mb-6">SELECT WALLET PROVIDER</h3>
+
+        <div className="space-y-4">
           {activeAddress && (
             <>
               <Account />
-              <div className="divider" />
+              <div className="divider border-green-500/30" />
             </>
           )}
 
@@ -28,37 +30,31 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
             wallets?.map((wallet) => (
               <button
                 data-test-id={`${wallet.id}-connect`}
-                className="btn border-teal-800 border-1  m-2"
+                className="w-full bg-green-900/80 border-2 border-green-500 text-green-500 px-4 py-3 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 flex items-center justify-center gap-3"
                 key={`provider-${wallet.id}`}
                 onClick={() => {
                   return wallet.connect()
                 }}
               >
-                {!isKmd(wallet) && (
-                  <img
-                    alt={`wallet_icon_${wallet.id}`}
-                    src={wallet.metadata.icon}
-                    style={{ objectFit: 'contain', width: '30px', height: 'auto' }}
-                  />
-                )}
-                <span>{isKmd(wallet) ? 'LocalNet Wallet' : wallet.metadata.name}</span>
+                {!isKmd(wallet) && <img alt={`wallet_icon_${wallet.id}`} src={wallet.metadata.icon} className="w-6 h-6 object-contain" />}
+                <span>{isKmd(wallet) ? 'LOCALNET WALLET' : wallet.metadata.name.toUpperCase()}</span>
               </button>
             ))}
         </div>
 
-        <div className="modal-action ">
+        <div className="modal-action mt-6">
           <button
             data-test-id="close-wallet-modal"
-            className="btn"
+            className="bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400"
             onClick={() => {
               closeModal()
             }}
           >
-            Close
+            CLOSE
           </button>
           {activeAddress && (
             <button
-              className="btn btn-warning"
+              className="bg-red-500/10 border-2 border-red-500 text-red-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-red-500/20 hover:border-red-400"
               data-test-id="logout"
               onClick={async () => {
                 if (wallets) {
@@ -66,16 +62,13 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
                   if (activeWallet) {
                     await activeWallet.disconnect()
                   } else {
-                    // Required for logout/cleanup of inactive providers
-                    // For instance, when you login to localnet wallet and switch network
-                    // to testnet/mainnet or vice verse.
                     localStorage.removeItem('@txnlab/use-wallet:v3')
                     window.location.reload()
                   }
                 }
               }}
             >
-              Logout
+              LOGOUT
             </button>
           )}
         </div>
@@ -83,4 +76,5 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
     </dialog>
   )
 }
+
 export default ConnectWallet

@@ -12,7 +12,7 @@ import AppGlobalStateDisplay from './AppGlobalState'
 import AdminPanel from './AdminPanel'
 import { AsaStakingContractClient, AsaStakingContractFactory } from '../contracts/ASAStakingContract'
 import { ApplicationResponse } from 'algosdk/dist/types/client/v2/indexer/models/types'
-import { Address } from 'algosdk'
+import algosdk, { Address } from 'algosdk'
 
 type AppGlobalState = {
   rewardPool: bigint
@@ -27,7 +27,7 @@ type AppGlobalState = {
 }
 
 const SimpleStakingDashboard: React.FC = () => {
-  const { activeAddress, transactionSigner } = useWallet()
+  const { activeAddress, transactionSigner, wallets } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
   const config = getStakingConfigFromViteEnvironment()
 
@@ -103,7 +103,7 @@ const SimpleStakingDashboard: React.FC = () => {
 
   // Simple stake function (placeholder - you'll need to implement contract calls)
   const handleStake = async () => {
-    if (!activeAddress || !stakeAmount || !config.appId || !config.asaId) return
+    if (!activeAddress || !stakeAmount || !config.appId || !config.asaId || !contractClient || !appGlobalState) return
 
     try {
       setLoading(true)
@@ -115,12 +115,16 @@ const SimpleStakingDashboard: React.FC = () => {
         return
       }
 
-      // TODO: Implement actual contract interaction
-      // This would involve creating a transaction group with:
-      // 1. Asset transfer to contract
-      // 2. Application call to stake method
+      const txn = await contractClient.algorand.createTransaction.assetTransfer({
+        amount: amountToStake,
+        sender: activeAddress,
+        receiver: contractClient.appAddress,
+        assetId: appGlobalState.asset,
+      })
 
-      enqueueSnackbar('Stake transaction successful! (Placeholder)', { variant: 'success' })
+      await contractClient.newGroup().addTransaction(txn).stake().send()
+
+      enqueueSnackbar('Staking successful!', { variant: 'success' })
       setStakeAmount('')
 
       // Update mock values
@@ -215,6 +219,37 @@ const SimpleStakingDashboard: React.FC = () => {
     }
   }
 
+  async function loadUserStake() {
+    if (!contractClient || !activeAddress) return
+
+    const address = algosdk.Address.fromString(activeAddress)
+    const addressBytes = address.publicKey
+    const boxName = Buffer.concat([Buffer.from('stakers'), Buffer.from(addressBytes)])
+
+    try {
+      const userStake = await contractClient.algorand.client.indexer.lookupApplicationBoxByIDandName(contractClient.appId, boxName).do()
+
+      if (userStake) {
+        const rawValue = userStake.value
+        const valueBuffer = Buffer.from(rawValue)
+
+        const stakeInfo = {
+          stakedAmount: BigInt(valueBuffer.readBigUInt64BE(0)),
+          firstStakeTime: BigInt(valueBuffer.readBigUInt64BE(8)),
+          lastStakeTime: BigInt(valueBuffer.readBigUInt64BE(16)),
+          totalRewardsEarned: BigInt(valueBuffer.readBigUInt64BE(24)),
+          rewardDebt: BigInt(valueBuffer.readBigUInt64BE(32)),
+        }
+
+        // Update state with the stake info
+        setStakedAmount(stakeInfo.stakedAmount)
+      }
+    } catch (error) {
+      // Box not found is an expected case for new users
+      setStakedAmount(0n)
+    }
+  }
+
   // Load balance when inputs change
   useEffect(() => {
     loadUserBalance()
@@ -226,6 +261,12 @@ const SimpleStakingDashboard: React.FC = () => {
       loadContractStats()
     }
   }, [contractClient])
+
+  useEffect(() => {
+    if (contractClient && activeAddress) {
+      loadUserStake()
+    }
+  }, [contractClient, activeAddress])
 
   return (
     <div className="min-h-screen bg-black font-mono relative overflow-x-hidden">
@@ -266,7 +307,9 @@ const SimpleStakingDashboard: React.FC = () => {
             <div className="absolute inset-1 border border-green-500/30 rounded-sm pointer-events-none" />
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-bold text-green-500 uppercase">STAKING TERMINAL v2.0</h2>
-              <Account />
+              <div className="flex items-center gap-4">
+                <Account />
+              </div>
             </div>
           </div>
 
@@ -396,58 +439,16 @@ const SimpleStakingDashboard: React.FC = () => {
                 <button
                   className={`w-full bg-amber-500/10 border-2 border-amber-500 text-amber-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-amber-500/20 hover:border-amber-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'crt-pulse' : ''}`}
                   onClick={handleWithdraw}
-                  disabled={loading || !withdrawAmount || stakedAmount === 0n || !config.appId}
+                  disabled={loading || !withdrawAmount || stakedAmount === 0n}
                 >
                   {loading ? 'WITHDRAWING...' : 'WITHDRAW'}
                 </button>
-                <div className="text-sm text-amber-500">NOTE: CONTRACT INTEGRATION IS PLACEHOLDER. IMPLEMENT ACTUAL CONTRACT CALLS.</div>
               </div>
             </div>
           </div>
 
           {/* Admin Panel */}
-          <AdminPanel
-            contractClient={contractClient}
-            appGlobalState={appGlobalState}
-            loading={loading}
-            onStateUpdate={() => {
-              loadUserBalance()
-              loadContractStats()
-            }}
-          />
-
-          {/* Instructions */}
-          <div className="bg-amber-500/10 border-2 border-amber-500 rounded-md p-4">
-            <h3 className="text-xl text-amber-500 uppercase mb-4">INTEGRATION INSTRUCTIONS</h3>
-            <div className="text-amber-500 space-y-2">
-              <p>
-                <strong>THIS IS A TEMPLATE IMPLEMENTATION.</strong> TO COMPLETE THE INTEGRATION:
-              </p>
-              <ol className="list-decimal list-inside space-y-1 ml-4">
-                <li>IMPORT YOUR GENERATED ASA STAKING CONTRACT CLIENT</li>
-                <li>INITIALIZE THE CONTRACT CLIENT WITH THE APP ID</li>
-                <li>IMPLEMENT PROPER TRANSACTION GROUPS FOR STAKING (ASSET TRANSFER + CONTRACT CALL)</li>
-                <li>ADD CONTRACT METHOD CALLS FOR GETUSERSTATS, GETPENDINGREWARDS, ETC.</li>
-                <li>HANDLE TRANSACTION SIGNING AND SUBMISSION</li>
-                <li>ADD ERROR HANDLING AND TRANSACTION CONFIRMATION</li>
-              </ol>
-              <p className="mt-4">
-                REFER TO THE <code className="bg-amber-500/20 px-1 rounded">ASAStakingContract.ts</code> FILE FOR AVAILABLE METHODS AND THE
-                README FOR DETAILED INTEGRATION STEPS.
-              </p>
-            </div>
-          </div>
-
-          {/* Refresh Button */}
-          <div className="text-center">
-            <button
-              className={`bg-green-500/10 border-2 border-green-500 text-green-500 px-4 py-2 font-mono font-bold uppercase rounded-sm cursor-pointer transition-all duration-200 hover:bg-green-500/20 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'crt-pulse' : ''}`}
-              onClick={loadUserBalance}
-              disabled={loading}
-            >
-              {loading ? 'LOADING...' : 'REFRESH BALANCE'}
-            </button>
-          </div>
+          <AdminPanel contractClient={contractClient} appGlobalState={appGlobalState} loading={loading} onStateUpdate={loadContractStats} />
         </div>
       </div>
     </div>
