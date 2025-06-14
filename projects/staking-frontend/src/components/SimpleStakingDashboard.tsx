@@ -27,7 +27,7 @@ type AppGlobalState = {
 }
 
 const SimpleStakingDashboard: React.FC = () => {
-  const { activeAddress, transactionSigner, wallets } = useWallet()
+  const { activeAddress, transactionSigner } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
   const config = getStakingConfigFromViteEnvironment()
 
@@ -216,6 +216,16 @@ const SimpleStakingDashboard: React.FC = () => {
       })
 
       setAppGlobalState(state)
+
+      // Calculate APY
+      if (state.totalStaked > 0n) {
+        const weeklyRewards = state.weeklyRewards
+        const totalStaked = state.totalStaked
+        const apy = (weeklyRewards * 52n * 100n) / totalStaked
+        _setCurrentAPY(apy)
+      } else {
+        _setCurrentAPY(0n)
+      }
     }
   }
 
