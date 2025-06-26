@@ -1,8 +1,9 @@
 import { TestExecutionContext } from '@algorandfoundation/algorand-typescript-testing'
 import { describe, expect, it, beforeEach } from 'vitest'
 import { ASAStakingContract, UserStakeInfo } from './contract.algo'
-import { Bytes } from '@algorandfoundation/algorand-typescript'
+import { Account, Bytes } from '@algorandfoundation/algorand-typescript'
 import { UintN64 } from '@algorandfoundation/algorand-typescript/arc4'
+import { DynamicArray } from '@algorandfoundation/algorand-typescript/arc4'
 
 describe('Staking contract', () => {
   const ctx = new TestExecutionContext()
@@ -10,6 +11,45 @@ describe('Staking contract', () => {
   // Constants for testing
   const WEEKLY_REWARDS = 100_000_000_000 // 100,000 tokens (6 decimals)
   const REWARD_PERIOD = 604_800 // 7 days in seconds
+
+  // Helper function to create a UserStakeInfo with all required fields
+  const createUserStakeInfo = (address: Account, stakedAmount: bigint, firstStakeTime: bigint = 0n, lastStakeTime: bigint = 0n, totalRewardsEarned: bigint = 0n, rewardDebt: bigint = 0n, pendingRewards: bigint = 0n) => {
+    return new UserStakeInfo({
+      address,
+      stakedAmount: new UintN64(stakedAmount),
+      firstStakeTime: new UintN64(firstStakeTime),
+      lastStakeTime: new UintN64(lastStakeTime),
+      totalRewardsEarned: new UintN64(totalRewardsEarned),
+      rewardDebt: new UintN64(rewardDebt),
+      pendingRewards: new UintN64(pendingRewards)
+    })
+  }
+
+  // Helper function to find a staker in the dynamic array
+  const findStakerInArray = (contract: ASAStakingContract, userAddress: Account): UserStakeInfo | null => {
+    for (let i = 0; i < contract.stakers.value.length; i++) {
+      const staker = contract.stakers.value[i]
+      if (staker.address === userAddress) {
+        return staker
+      }
+    }
+    return null
+  }
+
+  const getStaker = (contract: ASAStakingContract, userAddress: Account): UserStakeInfo | null => {
+    for (let i = 0; i < contract.stakers.value.length; i++) {
+      const staker = contract.stakers.value[i]
+      if (staker.address === userAddress) {
+        return staker
+      }
+    }
+    return null
+  }
+
+  // Helper function to get staker count
+  const getStakerCount = (contract: ASAStakingContract): number => {
+    return contract.stakers.value.length
+  }
 
   beforeEach(() => {
     ctx.reset()
@@ -29,11 +69,34 @@ describe('Staking contract', () => {
     expect(contract.accumulatedRewardsPerShare.value).toBe(0)
     expect(contract.weeklyRewards.value).toBe(WEEKLY_REWARDS)
     expect(contract.rewardPeriod.value).toBe(REWARD_PERIOD)
+    expect(getStakerCount(contract)).toBe(0)
   })
 
-  it('Cannot opt in to the ASA if not the creator', () => {
+  it('Cannot initialize twice', () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const asset = ctx.any.asset()
+
+    contract.initialize(asset, ctx.defaultSender, 1000, WEEKLY_REWARDS, REWARD_PERIOD)
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: contract })], 0).execute(() => {
+      expect(() => contract.initialize(asset, ctx.defaultSender, 1000, WEEKLY_REWARDS, REWARD_PERIOD)).toThrow()
+    })
+  })
+
+  it('Cannot initialize if not creator', () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const asset = ctx.any.asset()
+    const nonCreator = ctx.any.account()
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: nonCreator, appId: contract })], 0).execute(() => {
+      expect(() => contract.initialize(asset, ctx.defaultSender, 1000, WEEKLY_REWARDS, REWARD_PERIOD)).toThrow()
+    })
+  })
+
+  it('Cannot opt in to the ASA if not the creator or admin', () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const asset = ctx.any.asset()
+    const nonAdmin = ctx.any.account()
 
     contract.initialize(asset, ctx.defaultSender, 1000, WEEKLY_REWARDS, REWARD_PERIOD)
 
@@ -41,7 +104,7 @@ describe('Staking contract', () => {
       [
         ctx.any.txn.applicationCall({
           appId: contract,
-          sender: ctx.any.account(),
+          sender: nonAdmin,
           appArgs: [Bytes('optInToAsset')],
         }),
       ],
@@ -52,7 +115,7 @@ describe('Staking contract', () => {
     })
   })
 
-  it('Opt in to the ASA', () => {
+  it('Opt in to the ASA as creator', () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
@@ -64,6 +127,29 @@ describe('Staking contract', () => {
       }
     })
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.optInToAsset()
+    })
+
+    expect(contract.asset.value.id).toEqual(asset.id)
+
+    const assetTransferTxn = ctx.txn.lastGroup.lastItxnGroup().getAssetTransferInnerTxn()
+    expect(assetTransferTxn.assetAmount).toEqual(0)
+    expect(assetTransferTxn.xferAsset).toEqual(asset)
+  })
+
+  it('Opt in to the ASA as admin', () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const admin = ctx.any.account()
+
+    contract.initialize(asset, admin, 1000, WEEKLY_REWARDS, REWARD_PERIOD)
+    ctx.ledger.patchAccountData(app.address, {
+      account: {
+        balance: 10000000000,
+      }
+    })
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: admin, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
     })
 
@@ -124,7 +210,7 @@ describe('Staking contract', () => {
     })
   })
 
-  it('Must stake minimum amount', () => {
+  it('Must stake minimum amount for initial stake', () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
@@ -142,7 +228,7 @@ describe('Staking contract', () => {
 
     const txn = ctx.any.txn.assetTransfer({
       assetReceiver: app.address,
-      assetAmount: 1,
+      assetAmount: 999, // Below minimum
       assetSender: sender,
       xferAsset: asset,
     })
@@ -152,24 +238,17 @@ describe('Staking contract', () => {
     })
   })
 
-  it("Can stake", () => {
+  it('Cannot stake zero amount', () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
     const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
-    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
-
-    ctx.ledger.patchGlobalData({
-      latestTimestamp,
-    })
 
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
     contract.minimumStake.value = 1000
     contract.weeklyRewards.value = WEEKLY_REWARDS
     contract.rewardPeriod.value = REWARD_PERIOD
-    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
-    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       contract.optInToAsset()
@@ -177,22 +256,17 @@ describe('Staking contract', () => {
 
     const txn = ctx.any.txn.assetTransfer({
       assetReceiver: app.address,
-      assetAmount: 1000000,
+      assetAmount: 0,
       assetSender: sender,
       xferAsset: asset,
     })
 
     ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
-      contract.stake()
+      expect(() => contract.stake()).toThrow()
     })
-
-    expect(contract.totalStaked.value).toEqual(1000000)
-    expect(contract.stakers.length).toEqual(1)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(1000000n)
   })
 
-  it("Can stake multiple times", () => {
+  it("Can stake initial amount", () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
@@ -227,32 +301,69 @@ describe('Staking contract', () => {
     })
 
     expect(contract.totalStaked.value).toEqual(1000000)
-    expect(contract.stakers.length).toEqual(1)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(1000000n)
+    expect(getStakerCount(contract)).toEqual(1)
+    
+    const staker = findStakerInArray(contract, sender)
+    expect(staker).not.toBeNull()
+    expect(staker!.stakedAmount.native.valueOf()).toEqual(1000000n)
+    expect(staker!.firstStakeTime.native.valueOf()).toEqual(BigInt(latestTimestamp))
+    expect(staker!.lastStakeTime.native.valueOf()).toEqual(BigInt(latestTimestamp))
+  })
 
-    const txn2 = ctx.any.txn.assetTransfer({
+  it("Can stake additional amount after initial stake", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.minimumStake.value = 1000
+    contract.weeklyRewards.value = WEEKLY_REWARDS
+    contract.rewardPeriod.value = REWARD_PERIOD
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
+
+    // Add initial staker to the array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 1000000n, BigInt(latestTimestamp - 1000), BigInt(latestTimestamp - 1000)))
+    contract.totalStaked.value = 1000000
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.optInToAsset()
+    })
+
+    const txn = ctx.any.txn.assetTransfer({
       assetReceiver: app.address,
-      assetAmount: 1000000,
+      assetAmount: 500000, // Additional stake
       assetSender: sender,
       xferAsset: asset,
     })
 
-    ctx.txn.createScope([txn2, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
       contract.stake()
     })
 
-    expect(contract.totalStaked.value).toEqual(2000000)
-    expect(contract.stakers.length).toEqual(1)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(2000000n)
+    expect(contract.totalStaked.value).toEqual(1500000)
+    expect(getStakerCount(contract)).toEqual(1)
+    
+    const staker = findStakerInArray(contract, sender)
+    expect(staker).not.toBeNull()
+    expect(staker!.stakedAmount.native.valueOf()).toEqual(1500000n)
+    expect(staker!.firstStakeTime.native.valueOf()).toEqual(BigInt(latestTimestamp - 1000)) // Should not change
+    expect(staker!.lastStakeTime.native.valueOf()).toEqual(BigInt(latestTimestamp)) // Should update
   })
 
   it("Can have multiple stakers", () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
-    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const sender1 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
     const sender2 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
     const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
 
@@ -272,20 +383,22 @@ describe('Staking contract', () => {
       contract.optInToAsset()
     })
 
-    const txn = ctx.any.txn.assetTransfer({
+    // First staker
+    const txn1 = ctx.any.txn.assetTransfer({
       assetReceiver: app.address,
       assetAmount: 1000000,
-      assetSender: sender,
+      assetSender: sender1,
       xferAsset: asset,
     })
 
-    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender, appId: app }) ], 1).execute(() => {
+    ctx.txn.createScope([txn1, ctx.any.txn.applicationCall({ sender: sender1, appId: app }) ], 1).execute(() => {
       contract.stake()
     })
 
+    // Second staker
     const txn2 = ctx.any.txn.assetTransfer({
       assetReceiver: app.address,
-      assetAmount: 1000000,
+      assetAmount: 2000000,
       assetSender: sender2,
       xferAsset: asset,
     })
@@ -294,11 +407,15 @@ describe('Staking contract', () => {
       contract.stake()
     })
 
-    expect(contract.totalStaked.value).toEqual(2000000)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(1000000n)
-    expect(contract.stakers(sender2).exists).toEqual(true)
-    expect(contract.stakers(sender2).value.stakedAmount.native.valueOf()).toEqual(1000000n)
+    expect(contract.totalStaked.value).toEqual(3000000)
+    expect(getStakerCount(contract)).toEqual(2)
+    
+    const staker1 = findStakerInArray(contract, sender1)
+    const staker2 = findStakerInArray(contract, sender2)
+    expect(staker1).not.toBeNull()
+    expect(staker2).not.toBeNull()
+    expect(staker1!.stakedAmount.native.valueOf()).toEqual(1000000n)
+    expect(staker2!.stakedAmount.native.valueOf()).toEqual(2000000n)
   })
 
   it("Cannot withdraw if not staked", () => {
@@ -319,13 +436,6 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(sender).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(0), 
-      firstStakeTime: new UintN64(0),
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
       expect(() => contract.withdraw(1000000)).toThrow()
@@ -351,13 +461,10 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(sender).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(1000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
+    
+    // Add staker to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 1000n))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
       expect(() => contract.withdraw(500)).toThrow()
@@ -383,20 +490,46 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(sender).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(2000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
+    
+    // Add staker to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 2000n))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
       expect(() => contract.withdraw(3000)).toThrow()
     })
   })
 
-  it("Can withdraw stake", () => {
+  it("Cannot withdraw zero amount", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const sender = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.minimumStake.value = 1000
+    contract.totalStaked.value = 2000
+    contract.weeklyRewards.value = WEEKLY_REWARDS
+    contract.rewardPeriod.value = REWARD_PERIOD
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
+    
+    // Add staker to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 2000n))
+
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
+      expect(() => contract.withdraw(0)).toThrow()
+    })
+  })
+
+  it("Can withdraw full stake", () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
@@ -415,21 +548,20 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(sender).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(1000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
+    
+    // Add staker to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 1000n))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
       contract.withdraw(1000)
     })
 
     expect(contract.totalStaked.value).toEqual(0)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(0n)
+    
+    const staker = findStakerInArray(contract, sender)
+    expect(staker).not.toBeNull()
+    expect(staker!.stakedAmount.native.valueOf()).toEqual(0n)
 
     const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
     expect(assetTransferTxn.assetAmount).toEqual(1000)
@@ -457,21 +589,20 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(sender).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(10000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
+    
+    // Add staker to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 10000n))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
       contract.withdraw(1000)
     })
 
     expect(contract.totalStaked.value).toEqual(9000)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(9000n)
+    
+    const staker = findStakerInArray(contract, sender)
+    expect(staker).not.toBeNull()
+    expect(staker!.stakedAmount.native.valueOf()).toEqual(9000n)
 
     const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
     expect(assetTransferTxn.assetAmount).toEqual(1000)
@@ -480,7 +611,7 @@ describe('Staking contract', () => {
     expect(assetTransferTxn.xferAsset).toEqual(asset)
   })
 
-  it("Can withdraw multiple times stake", () => {
+  it("Can withdraw multiple times", () => {
     const contract = ctx.contract.create(ASAStakingContract)
     const app = ctx.ledger.getApplicationForContract(contract)
     const asset = ctx.any.asset()
@@ -499,21 +630,20 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(sender).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(10000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
+    
+    // Add staker to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(sender, 10000n))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender, appId: app }) ], 0).execute(() => {
       contract.withdraw(1000)
     })
 
     expect(contract.totalStaked.value).toEqual(9000)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(9000n)
+    
+    const staker = findStakerInArray(contract, sender)
+    expect(staker).not.toBeNull()
+    expect(staker!.stakedAmount.native.valueOf()).toEqual(9000n)
 
     const assetTransferTxn = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
     expect(assetTransferTxn.assetAmount).toEqual(1000)
@@ -526,8 +656,10 @@ describe('Staking contract', () => {
     })
 
     expect(contract.totalStaked.value).toEqual(0)
-    expect(contract.stakers(sender).exists).toEqual(true)
-    expect(contract.stakers(sender).value.stakedAmount.native.valueOf()).toEqual(0n)
+    
+    const stakerAfter = findStakerInArray(contract, sender)
+    expect(stakerAfter).not.toBeNull()
+    expect(stakerAfter!.stakedAmount.native.valueOf()).toEqual(0n)
 
     const assetTransferTxn2 = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
     expect(assetTransferTxn2.assetAmount).toEqual(9000)
@@ -556,28 +688,21 @@ describe('Staking contract', () => {
     contract.rewardPeriod.value = REWARD_PERIOD
     contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
     contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
-    contract.stakers(staker1).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(5000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
-    contract.stakers(staker2).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(5000), 
-      firstStakeTime: new UintN64(0), 
-      lastStakeTime: new UintN64(0), 
-      totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0) 
-    })
+    
+    // Add stakers to array
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(createUserStakeInfo(staker1, 5000n))
+    contract.stakers.value.push(createUserStakeInfo(staker2, 5000n))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: staker1, appId: app }) ], 0).execute(() => {
       contract.withdraw(1000)
     })
 
     expect(contract.totalStaked.value).toEqual(9000)
-    expect(contract.stakers(staker1).exists).toEqual(true)
-    expect(contract.stakers(staker1).value.stakedAmount.native.valueOf()).toEqual(4000n)
+    
+    const staker1Info = findStakerInArray(contract, staker1)
+    expect(staker1Info).not.toBeNull()
+    expect(staker1Info!.stakedAmount.native.valueOf()).toEqual(4000n)
 
     const assetTransferTxn1 = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
     expect(assetTransferTxn1.assetAmount).toEqual(1000)
@@ -590,8 +715,10 @@ describe('Staking contract', () => {
     })
 
     expect(contract.totalStaked.value).toEqual(8000)
-    expect(contract.stakers(staker2).exists).toEqual(true)
-    expect(contract.stakers(staker2).value.stakedAmount.native.valueOf()).toEqual(4000n)
+    
+    const staker2Info = findStakerInArray(contract, staker2)
+    expect(staker2Info).not.toBeNull()
+    expect(staker2Info!.stakedAmount.native.valueOf()).toEqual(4000n)
 
     const assetTransferTxn2 = ctx.txn.lastGroup.getItxnGroup(0).getAssetTransferInnerTxn(0)
     expect(assetTransferTxn2.assetAmount).toEqual(1000)
@@ -738,13 +865,16 @@ describe('Staking contract', () => {
     contract.asset.value = asset
     contract.totalStaked.value = 10000
     contract.accumulatedRewardsPerShare.value = 1 // 1 reward per token
-    contract.stakers(staker).value = new UserStakeInfo({ 
+    contract.stakers.value = new DynamicArray<UserStakeInfo>()
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: staker,
       stakedAmount: new UintN64(5000), 
       firstStakeTime: new UintN64(0),
       lastStakeTime: new UintN64(0), 
       totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0)
-    })
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       const pendingRewards = contract.getPendingRewards(staker)
@@ -803,23 +933,25 @@ describe('Staking contract', () => {
     contract.asset.value = asset
     contract.totalStaked.value = 10000
     contract.accumulatedRewardsPerShare.value = 1
-    contract.stakers(staker).value = new UserStakeInfo({ 
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: staker,
       stakedAmount: new UintN64(5000), 
-      firstStakeTime: new UintN64(100),
-      lastStakeTime: new UintN64(200), 
-      totalRewardsEarned: new UintN64(1000), 
-      rewardDebt: new UintN64(0)
-    })
+      firstStakeTime: new UintN64(0),
+      lastStakeTime: new UintN64(0), 
+      totalRewardsEarned: new UintN64(0), 
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
       const stats = contract.getUserStats(staker)
-      expect(stats.length).toEqual(6)
+      expect(stats.length).toEqual(7)
       expect(stats[0].valueOf()).toEqual(5000n) // stakedAmount
       expect(stats[1].valueOf()).toEqual(100n)  // firstStakeTime
       expect(stats[2].valueOf()).toEqual(200n)  // lastStakeTime
       expect(stats[3].valueOf()).toEqual(1000n) // totalRewardsEarned
-      expect(stats[4].valueOf()).toEqual(5000n) // pendingRewards
-      expect(stats[5].valueOf()).toEqual(0n)    // rewardDebt
+      expect(stats[4].valueOf()).toEqual(5000n) // rewardDebt
+      expect(stats[5].valueOf()).toEqual(0n)    // pendingRewards
     })
   })
 
@@ -963,19 +1095,22 @@ describe('Staking contract', () => {
     
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
-    contract.stakers(user).value = new UserStakeInfo({ 
-      stakedAmount: new UintN64(0), 
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: user,
+      stakedAmount: new UintN64(5000), 
       firstStakeTime: new UintN64(0),
       lastStakeTime: new UintN64(0), 
       totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0)
-    })
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: user, appId: app }) ], 0).execute(() => {
       contract.deleteUserBox(user)
     })
 
-    expect(contract.stakers(user).exists).toEqual(false)
+    const idx = findStakerInArray(contract, user)
+    expect(idx).toBeNull()
   })
 
   it("cannot delete user box with active stake", () => {
@@ -986,16 +1121,219 @@ describe('Staking contract', () => {
     
     contract.asset.value = asset
     contract.adminAddress.value = ctx.defaultSender
-    contract.stakers(user).value = new UserStakeInfo({ 
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: user,
       stakedAmount: new UintN64(1000), 
       firstStakeTime: new UintN64(0),
       lastStakeTime: new UintN64(0), 
       totalRewardsEarned: new UintN64(0), 
-      rewardDebt: new UintN64(0)
-    })
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
 
     ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: user, appId: app }) ], 0).execute(() => {
       expect(() => contract.deleteUserBox(user)).toThrow()
     })
+  })
+
+  it("compounds rewards during distribution", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const staker1 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const staker2 = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.minimumStake.value = 1000
+    contract.weeklyRewards.value = WEEKLY_REWARDS
+    contract.rewardPeriod.value = REWARD_PERIOD
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
+    contract.totalStaked.value = 2000000
+    contract.accumulatedRewardsPerShare.value = 1 // 1 reward per token
+
+    // Set up initial stakes
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: staker1,
+      stakedAmount: new UintN64(1000000), 
+      firstStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD),
+      lastStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD), 
+      totalRewardsEarned: new UintN64(0), 
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: staker2,
+      stakedAmount: new UintN64(1000000), 
+      firstStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD),
+      lastStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD), 
+      totalRewardsEarned: new UintN64(0), 
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
+
+    // Add more stake to staker1
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 1000000,
+      assetSender: staker1,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender: staker1, appId: app }) ], 1).execute(() => {
+      contract.stake()
+    })
+
+    // Check that rewards were not compounded during stake
+    const stakeInfo1 = getStaker(contract, staker1)
+    expect(stakeInfo1).not.toBeNull()
+    expect(stakeInfo1!.stakedAmount.native.valueOf()).toEqual(2000000n) // Should be exactly the new stake amount
+    expect(stakeInfo1!.totalRewardsEarned.native.valueOf()).toEqual(0n)
+
+    // Trigger reward distribution
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.triggerRewardDistribution()
+    })
+
+    // Check that rewards were compounded during distribution
+    const stakeInfo1After = getStaker(contract, staker1)
+    const stakeInfo2After = getStaker(contract, staker2)
+    expect(stakeInfo1After).not.toBeNull()
+    expect(stakeInfo2After).not.toBeNull()
+    expect(stakeInfo1After!.stakedAmount.native.valueOf()).toBeGreaterThan(2000000n) // Should be more than just the stake
+    expect(stakeInfo2After!.stakedAmount.native.valueOf()).toBeGreaterThan(1000000n) // Should be more than just the stake
+    expect(stakeInfo1After!.totalRewardsEarned.native.valueOf()).toBeGreaterThan(0n)
+    expect(stakeInfo2After!.totalRewardsEarned.native.valueOf()).toBeGreaterThan(0n)
+  })
+
+  it("tracks rewards separately from stake", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const staker = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.minimumStake.value = 1000
+    contract.weeklyRewards.value = WEEKLY_REWARDS
+    contract.rewardPeriod.value = REWARD_PERIOD
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
+    contract.totalStaked.value = 1000000
+    contract.accumulatedRewardsPerShare.value = 1 // 1 reward per token
+
+    // Set up initial stake
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: staker,
+      stakedAmount: new UintN64(1000000), 
+      firstStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD),
+      lastStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD), 
+      totalRewardsEarned: new UintN64(0), 
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
+
+    // Add more stake
+    const txn = ctx.any.txn.assetTransfer({
+      assetReceiver: app.address,
+      assetAmount: 1000000,
+      assetSender: staker,
+      xferAsset: asset,
+    })
+
+    ctx.txn.createScope([txn, ctx.any.txn.applicationCall({ sender: staker, appId: app }) ], 1).execute(() => {
+      contract.stake()
+    })
+
+    // Check that stake increased but rewards weren't compounded
+    const stakeInfo = getStaker(contract, staker)
+    expect(stakeInfo).not.toBeNull()
+    expect(stakeInfo!.stakedAmount.native.valueOf()).toEqual(2000000n) // Should be exactly the new stake amount
+    expect(stakeInfo!.totalRewardsEarned.native.valueOf()).toEqual(0n)
+    expect(stakeInfo!.pendingRewards.native.valueOf()).toEqual(0n)
+
+    // Trigger reward distribution
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.triggerRewardDistribution()
+    })
+
+    // Check that rewards were compounded during distribution
+    const stakeInfoAfter = getStaker(contract, staker)
+    expect(stakeInfoAfter).not.toBeNull()
+    expect(stakeInfoAfter!.stakedAmount.native.valueOf()).toBeGreaterThan(2000000n) // Should be more than just the stake
+    expect(stakeInfoAfter!.totalRewardsEarned.native.valueOf()).toBeGreaterThan(0n)
+    expect(stakeInfoAfter!.pendingRewards.native.valueOf()).toEqual(0n)
+  })
+
+  it("maintains accurate reward tracking during multiple distributions", () => {
+    const contract = ctx.contract.create(ASAStakingContract)
+    const app = ctx.ledger.getApplicationForContract(contract)
+    const asset = ctx.any.asset()
+    const staker = ctx.any.account({ optedAssetBalances: new Map([[asset.id, 10000000000n]]) })
+    const latestTimestamp = ctx.any.uint64(1746057600, 1748995200)
+
+    ctx.ledger.patchGlobalData({
+      latestTimestamp,
+    })
+
+    contract.asset.value = asset
+    contract.adminAddress.value = ctx.defaultSender
+    contract.minimumStake.value = 1000
+    contract.weeklyRewards.value = WEEKLY_REWARDS
+    contract.rewardPeriod.value = REWARD_PERIOD
+    contract.lastRewardTime.value = latestTimestamp - REWARD_PERIOD
+    contract.rewardPool.value = 100_000_000_000_000_000 // 100B tokens
+    contract.totalStaked.value = 1000000
+    contract.accumulatedRewardsPerShare.value = 1 // 1 reward per token
+
+    // Set up initial stake
+    contract.stakers.value.push(new UserStakeInfo({ 
+      address: staker,
+      stakedAmount: new UintN64(1000000), 
+      firstStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD),
+      lastStakeTime: new UintN64(latestTimestamp - REWARD_PERIOD), 
+      totalRewardsEarned: new UintN64(0), 
+      rewardDebt: new UintN64(0),
+      pendingRewards: new UintN64(0)
+    }))
+
+    // First distribution
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.triggerRewardDistribution()
+    })
+
+    const stakeInfo1 = getStaker(contract, staker)
+    expect(stakeInfo1).not.toBeNull()
+    const firstRewards = stakeInfo1!.totalRewardsEarned.native.valueOf()
+
+    // Advance time by one period
+    ctx.ledger.patchGlobalData({
+      latestTimestamp: latestTimestamp + REWARD_PERIOD,
+    })
+
+    // Second distribution
+    ctx.txn.createScope([ctx.any.txn.applicationCall({ sender: ctx.defaultSender, appId: app }) ], 0).execute(() => {
+      contract.triggerRewardDistribution()
+    })
+
+    const stakeInfo2 = getStaker(contract, staker)
+    expect(stakeInfo2).not.toBeNull()
+    const secondRewards = stakeInfo2!.totalRewardsEarned.native.valueOf() - firstRewards
+
+    // Verify that rewards are being tracked correctly
+    expect(stakeInfo2!.stakedAmount.native.valueOf()).toBeGreaterThan(stakeInfo1!.stakedAmount.native.valueOf())
+    expect(secondRewards).toBeGreaterThan(0n)
+    expect(stakeInfo2!.pendingRewards.native.valueOf()).toEqual(0n)
   })
 })

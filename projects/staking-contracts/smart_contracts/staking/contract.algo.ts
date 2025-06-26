@@ -5,7 +5,7 @@ import {
   arc4,
   assert,
   Asset,
-  BoxMap,
+  Box,
   contract,
   Contract,
   Global,
@@ -16,11 +16,13 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
+import { DynamicArray } from '@algorandfoundation/algorand-typescript/arc4'
 
 /**
  * User stake information stored in box storage
  */
 export class UserStakeInfo extends arc4.Struct<{
+  address: Account
   // Amount of tokens staked by this user
   stakedAmount: arc4.UintN64
   // Timestamp when user first staked (never changes after first stake)
@@ -31,6 +33,8 @@ export class UserStakeInfo extends arc4.Struct<{
   totalRewardsEarned: arc4.UintN64
   // User's reward debt for accumulator pattern
   rewardDebt: arc4.UintN64
+  // Accumulated rewards that haven't been compounded yet
+  pendingRewards: arc4.UintN64
 }> {}
 
 /**
@@ -61,32 +65,66 @@ export class ASAStakingContract extends Contract {
   public weeklyRewards = GlobalState<uint64>({ initialValue: 0 })
   public rewardPeriod = GlobalState<uint64>({ initialValue: 0 })
 
-  public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+  // public stakers = BoxMap<Account, UserStakeInfo>({ keyPrefix: 'stakers' })
+  public stakers = Box<DynamicArray<UserStakeInfo>>({ key: 'stakers' })
+
+  private findStaker(userAddress: Account): uint64 {
+    for (let i: uint64 = 0; i < this.stakers.value.length; i++) {
+      const compareStaker = this.stakers.value[i]
+      if (compareStaker.address === userAddress) {
+        return i
+      }
+    }
+
+    return -1
+  }
+
+  private removeStaker(userAddress: Account): void {
+    const idx = this.findStaker(userAddress)
+    if (idx !== -1) {
+      const currentStakers = this.stakers.value.copy()
+      const newStakers = new DynamicArray<UserStakeInfo>()
+      for (let i = 0; i < currentStakers.length; i++) {
+        if (i !== idx) {
+          newStakers.push(currentStakers[i])
+        }
+      }
+      this.stakers.value = newStakers
+    }
+  }
 
   /**
    * Helper function to read user stake info from box storage
    */
   public getUserStakeInfo(userAddress: Account): UserStakeInfo {
-    const userBox = this.stakers(userAddress)
-
-    if (userBox.exists) {
-      return userBox.value.copy()
-    } else {
-      return new UserStakeInfo({
-        stakedAmount: new arc4.UintN64(0),
-        firstStakeTime: new arc4.UintN64(0),
-        lastStakeTime: new arc4.UintN64(0),
-        totalRewardsEarned: new arc4.UintN64(0),
-        rewardDebt: new arc4.UintN64(0),
-      })
+    for (let i = 0; i < this.stakers.value.length; i++) {
+      const compareStaker = this.stakers.value[i]
+      if (compareStaker.address === userAddress) {
+        return compareStaker
+      }
     }
+    return new UserStakeInfo({
+      address: Global.zeroAddress,
+      stakedAmount: new arc4.UintN64(0),
+      firstStakeTime: new arc4.UintN64(0),
+      lastStakeTime: new arc4.UintN64(0),
+      totalRewardsEarned: new arc4.UintN64(0),
+      rewardDebt: new arc4.UintN64(0),
+      pendingRewards: new arc4.UintN64(0),
+    })
   }
 
   /**
    * Helper function to store user stake info in box storage
    */
-  public storeUserStakeInfo(userAddress: Account, stakeInfo: UserStakeInfo): void {
-    this.stakers(userAddress).value = stakeInfo.copy()
+  public storeUserStakeInfo(stakeInfo: UserStakeInfo): void {
+    const staker = this.getUserStakeInfo(stakeInfo.address)
+    if (staker.address === Global.zeroAddress) {
+      this.stakers.value.push(stakeInfo)
+    } else {
+      const idx = this.findStaker(stakeInfo.address)
+      this.stakers.value[idx] = stakeInfo
+    }
   }
 
   /**
@@ -110,6 +148,7 @@ export class ASAStakingContract extends Contract {
       const totalStaked = this.totalStaked.value
       const rewardPerShare: uint64 = totalRewards / totalStaked
       
+      // Update accumulated rewards per share
       this.accumulatedRewardsPerShare.value = this.accumulatedRewardsPerShare.value + rewardPerShare
       
       // Update last reward time to the most recent complete period
@@ -139,6 +178,27 @@ export class ASAStakingContract extends Contract {
     const pendingRewards: uint64 = totalEarned > userRewardDebt ? totalEarned - userRewardDebt : 0
     
     return pendingRewards
+  }
+
+  /**
+   * Helper function to compound rewards for a user
+   */
+  private compoundRewards(userAddress: Account): void {
+    const stakeInfo = this.getUserStakeInfo(userAddress)
+    if (stakeInfo.stakedAmount.native > 0) {
+      const pendingRewards = this.calculatePendingRewards(userAddress)
+      if (pendingRewards > 0) {
+        // Add rewards to stake
+        stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + pendingRewards)
+        stakeInfo.totalRewardsEarned = new arc4.UintN64(stakeInfo.totalRewardsEarned.native + pendingRewards)
+        stakeInfo.rewardDebt = new arc4.UintN64(stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value)
+        stakeInfo.pendingRewards = new arc4.UintN64(0)
+        this.storeUserStakeInfo(stakeInfo)
+        
+        // Update total staked
+        this.totalStaked.value = this.totalStaked.value + pendingRewards
+      }
+    }
   }
 
   /**
@@ -228,7 +288,7 @@ export class ASAStakingContract extends Contract {
       stakeInfo.firstStakeTime = new arc4.UintN64(Global.latestTimestamp)
     }
 
-    // Update stake info
+    // Update stake info with new amount
     stakeInfo.stakedAmount = new arc4.UintN64(stakeInfo.stakedAmount.native + stakeAmount)
     stakeInfo.lastStakeTime = new arc4.UintN64(Global.latestTimestamp)
     
@@ -236,7 +296,7 @@ export class ASAStakingContract extends Contract {
     stakeInfo.rewardDebt = new arc4.UintN64(stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value)
 
     // Store updated stake info
-    this.storeUserStakeInfo(senderAddress, stakeInfo)
+    this.storeUserStakeInfo(stakeInfo)
 
     // Update global state
     this.totalStaked.value = this.totalStaked.value + stakeAmount
@@ -271,7 +331,7 @@ export class ASAStakingContract extends Contract {
     stakeInfo.rewardDebt = new arc4.UintN64(stakeInfo.stakedAmount.native * this.accumulatedRewardsPerShare.value)
 
     // Store updated stake info
-    this.storeUserStakeInfo(senderAddress, stakeInfo)
+    this.storeUserStakeInfo(stakeInfo)
 
     // Update global state
     this.totalStaked.value = this.totalStaked.value - amount
@@ -345,6 +405,7 @@ export class ASAStakingContract extends Contract {
   /**
    * Trigger reward distribution manually (admin only)
    * Updates accumulated rewards per share if period has passed
+   * and compounds rewards for all stakers
    */
   @abimethod()
   public triggerRewardDistribution(): void {
@@ -354,6 +415,15 @@ export class ASAStakingContract extends Contract {
     
     // Update rewards
     this.updateRewards()
+
+    // Get all stakers and compound their rewards
+    // Note: In Algorand, we can't iterate over all boxes directly
+    // Instead, we'll rely on the fact that rewards are automatically
+    // compounded when users interact with the contract (stake/withdraw)
+    // This is more gas efficient and follows Algorand's design patterns
+    for (const stakeInfo of this.stakers.value) {
+      this.compoundRewards(stakeInfo.address)
+    }
   }
 
   /**
@@ -385,6 +455,7 @@ export class ASAStakingContract extends Contract {
       stakeInfo.totalRewardsEarned.native,
       pendingRewards,
       stakeInfo.rewardDebt.native,
+      stakeInfo.pendingRewards.native,
     ]
 
     return result
@@ -455,10 +526,7 @@ export class ASAStakingContract extends Contract {
     assert(stakeInfo.stakedAmount.native === 0, 'User still has active stake')
 
     // Delete the box
-    const userBox = this.stakers(userAddress)
-    if (userBox.exists) {
-      userBox.delete()
-    }
+    this.removeStaker(stakeInfo.address)
   }
 
   /**
